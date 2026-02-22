@@ -1,6 +1,7 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import type { IncomingMessage } from 'http';
 import type { ChatMessage, Holder } from '../types/index.js';
+import { config } from '../utils/config.js';
 
 // Map of tokenMint -> Set<WebSocket>
 const rooms = new Map<string, Set<WebSocket>>();
@@ -10,7 +11,14 @@ const feedSubscribers = new Set<WebSocket>();
 const aliveClients = new WeakSet<WebSocket>();
 
 export function createWebSocketServer(port: number): WebSocketServer {
-  const wss = new WebSocketServer({ port });
+  const wss = new WebSocketServer({
+    port,
+    verifyClient: (info) => {
+      const origin = info.origin || info.req.headers.origin;
+      if (!origin) return true; // Allow non-browser clients
+      return config.corsOrigin === '*' || config.corsOrigin === origin;
+    },
+  });
 
   wss.on('connection', (ws: WebSocket, req: IncomingMessage) => {
     aliveClients.add(ws);
@@ -80,7 +88,7 @@ export function createWebSocketServer(port: number): WebSocketServer {
   return wss;
 }
 
-export function broadcastMessage(tokenMint: string, message: ChatMessage): void {
+export function broadcastMessage(tokenMint: string, message: ChatMessage, tokenSymbol?: string): void {
   const payload = JSON.stringify({
     type: 'message',
     data: message,
@@ -96,11 +104,15 @@ export function broadcastMessage(tokenMint: string, message: ChatMessage): void 
     });
   }
 
-  // Also broadcast to global feed subscribers
+  // Broadcast to global feed subscribers with tokenSymbol
   if (feedSubscribers.size > 0) {
+    const feedPayload = JSON.stringify({
+      type: 'message',
+      data: { ...message, tokenSymbol: tokenSymbol || tokenMint.slice(0, 6) },
+    });
     feedSubscribers.forEach((ws) => {
       if (ws.readyState === WebSocket.OPEN) {
-        ws.send(payload);
+        ws.send(feedPayload);
       }
     });
   }

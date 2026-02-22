@@ -20,11 +20,20 @@ export function useChat(tokenMint: string | null, authToken: string | null) {
       return;
     }
 
+    const controller = new AbortController();
     setLoading(true);
     fetchMessages(tokenMint)
-      .then((msgs) => setMessages(msgs))
-      .catch((err) => console.error("Failed to load messages:", err))
-      .finally(() => setLoading(false));
+      .then((msgs) => {
+        if (!controller.signal.aborted) setMessages(msgs);
+      })
+      .catch((err) => {
+        if (!controller.signal.aborted) console.error("Failed to load messages:", err);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+
+    return () => controller.abort();
   }, [tokenMint]);
 
   // WebSocket subscription
@@ -54,9 +63,10 @@ export function useChat(tokenMint: string | null, authToken: string | null) {
 
   const sendMessage = useCallback(
     async (content: string) => {
-      if (!tokenMint || !authToken) return;
+      if (!tokenMint || !authToken) {
+        throw new Error("Not authenticated");
+      }
       await apiSendMessage(tokenMint, content, authToken);
-      // Message will come back via WebSocket
     },
     [tokenMint, authToken]
   );

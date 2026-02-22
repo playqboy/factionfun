@@ -18,12 +18,11 @@ export async function storeMessage(
   content: string,
   signature: string
 ): Promise<ChatMessage> {
-  const validation = validateMessageContent(content);
+  const sanitized = sanitizeMessageContent(content);
+  const validation = validateMessageContent(sanitized);
   if (!validation.valid) {
     throw new Error(validation.error);
   }
-
-  const sanitized = sanitizeMessageContent(content);
 
   const result = await query(
     `INSERT INTO messages (token_mint, wallet_address, content, signature)
@@ -108,4 +107,15 @@ export async function getRecentMessagesGlobal(
     createdAt: row.created_at,
     tokenSymbol: symbolMap.get(row.token_mint) || row.token_mint.slice(0, 6),
   }));
+}
+
+export async function getTokenSymbol(tokenMint: string): Promise<string> {
+  try {
+    const cached = await redisClient.get(`tokeninfo:${tokenMint}`);
+    if (cached) {
+      const info = JSON.parse(cached);
+      return info.symbol || tokenMint.slice(0, 6);
+    }
+  } catch { /* ignore */ }
+  return tokenMint.slice(0, 6);
 }

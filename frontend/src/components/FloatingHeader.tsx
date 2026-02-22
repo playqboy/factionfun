@@ -4,7 +4,7 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { FaBars } from "react-icons/fa6";
-import { Sheet, SheetContent, SheetFooter } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetFooter, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -70,6 +70,8 @@ export default function FloatingHeader() {
               showClose={false}
               side="left"
             >
+              <SheetTitle className="sr-only">Navigation</SheetTitle>
+              <SheetDescription className="sr-only">Site navigation links</SheetDescription>
               <div className="grid gap-y-2 overflow-y-auto px-4 pt-12 pb-5">
                 {links.map((link) => (
                   <a

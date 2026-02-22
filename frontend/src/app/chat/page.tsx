@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import {
   FaCrown,
   FaSignal,
@@ -11,6 +11,7 @@ import {
   FaAnglesLeft,
   FaBarsStaggered,
   FaRightFromBracket,
+  FaTriangleExclamation,
 } from "react-icons/fa6";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -36,15 +37,17 @@ export default function ChatPage() {
   const [tokenMint, setTokenMint] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const { data: holders, isLoading: holdersLoading } =
+  const { data: holders, isLoading: holdersLoading, isError: holdersError } =
     useTopHolders(tokenMint);
-  const { data: userStatus } = useUserStatus(tokenMint, walletAddress);
-  const { data: tokenInfo } = useTokenInfo(tokenMint);
+  const { data: userStatus, isError: userStatusError } = useUserStatus(tokenMint, walletAddress);
+  const { data: tokenInfo, isError: tokenInfoError } = useTokenInfo(tokenMint);
   const {
     messages,
     loading: chatLoading,
     sendMessage,
   } = useChat(tokenMint, authToken);
+
+  const hasQueryError = holdersError || userStatusError || tokenInfoError;
 
   return (
     <div className="h-screen flex bg-background">
@@ -207,13 +210,20 @@ export default function ChatPage() {
         </nav>
 
         {/* Mobile sidebar overlay */}
-        {sidebarOpen && (
-          <>
-            <div
+        <AnimatePresence>
+          {sidebarOpen && (
+            <motion.div
+              key="sidebar-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               className="fixed inset-0 bg-black/50 backdrop-blur-sm z-30 md:hidden"
               onClick={() => setSidebarOpen(false)}
             />
+          )}
+          {sidebarOpen && (
             <motion.aside
+              key="sidebar"
               initial={{ x: -260 }}
               animate={{ x: 0 }}
               exit={{ x: -260 }}
@@ -269,8 +279,8 @@ export default function ChatPage() {
                 )}
               </div>
             </motion.aside>
-          </>
-        )}
+          )}
+        </AnimatePresence>
 
         {/* Chat area */}
         <div className="flex-1 flex flex-col min-h-0">
@@ -312,6 +322,14 @@ export default function ChatPage() {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3 }}
             >
+              {hasQueryError && (
+                <div className="px-5 py-2 flex items-center gap-2 text-yellow-400 bg-yellow-500/5 border-b border-yellow-500/10 flex-shrink-0">
+                  <FaTriangleExclamation className="w-3 h-3 flex-shrink-0" />
+                  <span className="text-xs">
+                    Failed to load some data. Retrying...
+                  </span>
+                </div>
+              )}
               <ChatWindow
                 messages={messages}
                 onSend={sendMessage}
@@ -326,9 +344,11 @@ export default function ChatPage() {
                 inputStatus={
                   !walletAddress
                     ? "connect"
-                    : !userStatus?.isInTop10
-                      ? "not-top10"
-                      : "ready"
+                    : !isAuthenticated
+                      ? "authenticating"
+                      : !userStatus?.isInTop10
+                        ? "not-top10"
+                        : "ready"
                 }
                 onConnect={authenticate}
               />

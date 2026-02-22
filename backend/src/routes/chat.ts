@@ -2,7 +2,7 @@ import { Router, type Response } from 'express';
 import { requireAuth, type AuthenticatedRequest } from '../middleware/auth.js';
 import { requireTop10 } from '../middleware/verify.js';
 import { chatMessageLimiter } from '../middleware/rateLimit.js';
-import { storeMessage, getMessages, getRecentMessagesGlobal } from '../services/chatService.js';
+import { storeMessage, getMessages, getRecentMessagesGlobal, getTokenSymbol } from '../services/chatService.js';
 import { broadcastMessage } from '../websocket/handlers.js';
 import { isValidSolanaAddress } from '../utils/validation.js';
 
@@ -44,8 +44,8 @@ chatRoutes.get('/:mint/messages', async (req, res) => {
 chatRoutes.post(
   '/message',
   requireAuth,
-  chatMessageLimiter,
   requireTop10(),
+  chatMessageLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     const { tokenMint, content } = req.body;
     const walletAddress = req.walletAddress!;
@@ -61,8 +61,11 @@ chatRoutes.post(
     }
 
     try {
-      const message = await storeMessage(tokenMint, walletAddress, content, 'verified');
-      broadcastMessage(tokenMint, message);
+      const [message, tokenSymbol] = await Promise.all([
+        storeMessage(tokenMint, walletAddress, content, 'verified'),
+        getTokenSymbol(tokenMint),
+      ]);
+      broadcastMessage(tokenMint, message, tokenSymbol);
       res.json({ messageId: message.id, status: 'sent' });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to send message';

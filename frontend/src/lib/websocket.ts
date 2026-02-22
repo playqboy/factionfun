@@ -7,12 +7,18 @@ export interface WSEvent {
   data: unknown;
 }
 
+interface SocketOptions {
+  onConnect?: () => void;
+  onDisconnect?: () => void;
+}
+
 const MAX_RECONNECT_DELAY = 30_000;
 const INITIAL_RECONNECT_DELAY = 1_000;
 
 export function createChatSocket(
   tokenMint: string,
-  onEvent: (event: WSEvent) => void
+  onEvent: (event: WSEvent) => void,
+  options?: SocketOptions
 ): { close: () => void } {
   let ws: WebSocket | null = null;
   let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -26,6 +32,7 @@ export function createChatSocket(
 
     ws.onopen = () => {
       reconnectDelay = INITIAL_RECONNECT_DELAY;
+      options?.onConnect?.();
     };
 
     ws.onmessage = (event) => {
@@ -38,6 +45,7 @@ export function createChatSocket(
     };
 
     ws.onclose = () => {
+      options?.onDisconnect?.();
       if (!closed) {
         reconnectTimeout = setTimeout(connect, reconnectDelay);
         reconnectDelay = Math.min(reconnectDelay * 2, MAX_RECONNECT_DELAY);
@@ -61,7 +69,8 @@ export function createChatSocket(
 }
 
 export function createFeedSocket(
-  onEvent: (event: WSEvent) => void
+  onEvent: (event: WSEvent) => void,
+  options?: SocketOptions
 ): { close: () => void } {
   let ws: WebSocket | null = null;
   let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -75,6 +84,7 @@ export function createFeedSocket(
 
     ws.onopen = () => {
       reconnectDelay = INITIAL_RECONNECT_DELAY;
+      options?.onConnect?.();
     };
 
     ws.onmessage = (event) => {
@@ -87,6 +97,7 @@ export function createFeedSocket(
     };
 
     ws.onclose = () => {
+      options?.onDisconnect?.();
       if (!closed) {
         reconnectTimeout = setTimeout(connect, reconnectDelay);
         reconnectDelay = Math.min(reconnectDelay * 2, MAX_RECONNECT_DELAY);

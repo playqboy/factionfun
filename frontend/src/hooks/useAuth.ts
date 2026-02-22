@@ -26,11 +26,11 @@ function useAuthWithPrivy() {
       return;
     }
 
-    getAccessToken().then(setAuthToken);
+    getAccessToken().then(setAuthToken).catch(() => setAuthToken(null));
 
     // Refresh every 50 minutes (tokens expire ~60 min)
     const interval = setInterval(() => {
-      getAccessToken().then(setAuthToken);
+      getAccessToken().then(setAuthToken).catch(() => setAuthToken(null));
     }, 50 * 60 * 1000);
 
     return () => clearInterval(interval);

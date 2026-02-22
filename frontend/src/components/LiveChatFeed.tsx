@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, memo } from "react";
+import { useState, useEffect, useCallback, memo } from "react";
 import { FaMessage, FaTowerBroadcast } from "react-icons/fa6";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -35,7 +35,6 @@ const MAX_MESSAGES = 15;
 export default memo(function LiveChatFeed() {
   const [messages, setMessages] = useState<FeedMessage[]>([]);
   const [connected, setConnected] = useState(false);
-  const latestIdRef = useRef(0);
 
   // Fetch initial messages from the API
   useEffect(() => {
@@ -46,9 +45,6 @@ export default memo(function LiveChatFeed() {
         if (cancelled) return;
         const feed = data.map(toFeedMessage).slice(0, MAX_MESSAGES);
         setMessages(feed);
-        if (feed.length > 0) {
-          latestIdRef.current = Math.max(...feed.map((m) => m.id));
-        }
       })
       .catch(() => {
         // Backend unavailable — feed stays empty
@@ -69,13 +65,13 @@ export default memo(function LiveChatFeed() {
           walletAddress: string;
           content: string;
           createdAt: string;
+          tokenSymbol?: string;
         };
-        // Derive a ticker from the mint (first 6 chars) since WS doesn't carry tokenSymbol
         const msg: FeedMessage = {
           id: raw.id,
           wallet: truncateAddress(raw.walletAddress),
           content: raw.content,
-          ticker: `$${raw.tokenMint.slice(0, 6)}`,
+          ticker: `$${raw.tokenSymbol || raw.tokenMint.slice(0, 6)}`,
           timestamp: new Date(raw.createdAt).getTime(),
         };
         setMessages((prev) => [msg, ...prev].slice(0, MAX_MESSAGES));
@@ -85,9 +81,9 @@ export default memo(function LiveChatFeed() {
   );
 
   useEffect(() => {
-    const socket = createFeedSocket((event) => {
-      setConnected(true);
-      handleWsMessage(event);
+    const socket = createFeedSocket(handleWsMessage, {
+      onConnect: () => setConnected(true),
+      onDisconnect: () => setConnected(false),
     });
 
     return () => {

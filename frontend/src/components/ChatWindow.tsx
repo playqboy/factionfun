@@ -9,6 +9,7 @@ import {
   FaWallet,
   FaCopy,
   FaCheck,
+  FaTriangleExclamation,
 } from "react-icons/fa6";
 import type { ChatMessageResponse, HolderResponse } from "@/lib/api";
 import { formatTime } from "@/lib/utils";
@@ -29,7 +30,7 @@ interface ChatWindowProps {
   holders?: HolderResponse[];
   isLoading?: boolean;
   canSend?: boolean;
-  inputStatus?: "connect" | "not-top10" | "ready";
+  inputStatus?: "connect" | "not-top10" | "authenticating" | "ready";
   onConnect?: () => void;
 }
 
@@ -136,6 +137,7 @@ export default memo(function ChatWindow({
 }: ChatWindowProps) {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
   const [copiedWallet, setCopiedWallet] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -157,32 +159,19 @@ export default memo(function ChatWindow({
     return map;
   }, [holders]);
 
-  // Wallet → total message count (incremental via ref + useMemo)
-  const msgCountRef = useRef(new Map<string, number>());
-  const prevMessagesLenRef = useRef(0);
-
+  // Wallet → total message count (pure computation)
   const msgCountByWallet = useMemo(() => {
-    const map = msgCountRef.current;
-    // Only process new messages since last computation
-    const start = prevMessagesLenRef.current;
-    // If messages shrunk (e.g. token switch), rebuild
-    if (messages.length < start) {
-      map.clear();
-      for (const m of messages) {
-        map.set(m.walletAddress, (map.get(m.walletAddress) || 0) + 1);
-      }
-    } else {
-      for (let i = start; i < messages.length; i++) {
-        const wallet = messages[i].walletAddress;
-        map.set(wallet, (map.get(wallet) || 0) + 1);
-      }
+    const map = new Map<string, number>();
+    for (const m of messages) {
+      map.set(m.walletAddress, (map.get(m.walletAddress) || 0) + 1);
     }
-    prevMessagesLenRef.current = messages.length;
     return map;
   }, [messages]);
 
   const copyWallet = useCallback((address: string) => {
-    navigator.clipboard.writeText(address);
+    try {
+      navigator.clipboard.writeText(address);
+    } catch { /* clipboard unavailable */ }
     setCopiedWallet(address);
     setTimeout(() => setCopiedWallet(null), 1500);
   }, []);
@@ -220,11 +209,13 @@ export default memo(function ChatWindow({
     if (!trimmed || sending) return;
 
     setSending(true);
+    setSendError(null);
     try {
       await onSend(trimmed);
       setInput("");
-    } catch (err) {
-      console.error("Failed to send:", err);
+    } catch {
+      setSendError("Failed to send message");
+      setTimeout(() => setSendError(null), 4000);
     } finally {
       setSending(false);
     }
@@ -259,6 +250,19 @@ export default memo(function ChatWindow({
               Connect
             </Button>
           )}
+        </div>
+      );
+    }
+
+    if (inputStatus === "authenticating") {
+      return (
+        <div className="flex items-center gap-2.5 px-5 py-3.5 text-muted-foreground">
+          <div className="flex items-center justify-center w-7 h-7 rounded-sm bg-muted/50">
+            <FaSpinner className="w-3.5 h-3.5 animate-spin" />
+          </div>
+          <span className="text-xs font-medium">
+            Verifying wallet...
+          </span>
         </div>
       );
     }
@@ -352,6 +356,12 @@ export default memo(function ChatWindow({
 
       {/* ── Input area ── */}
       <div className="border-t border-white/[0.06] flex-shrink-0">
+        {sendError && (
+          <div className="px-4 py-2 flex items-center gap-2 text-red-400 bg-red-500/5 border-b border-red-500/10">
+            <FaTriangleExclamation className="w-3 h-3 flex-shrink-0" />
+            <span className="text-xs">{sendError}</span>
+          </div>
+        )}
         {canSend ? (
           <form
             onSubmit={handleSend}

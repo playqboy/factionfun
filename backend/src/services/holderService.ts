@@ -99,7 +99,9 @@ export async function fetchTokenInfo(tokenMint: string): Promise<TokenInfo> {
   const cacheKey = `tokeninfo:${tokenMint}`;
   const cached = await redisClient.get(cacheKey);
   if (cached) {
-    return JSON.parse(cached);
+    const parsed = JSON.parse(cached);
+    parsed.totalSupply = BigInt(parsed.totalSupply);
+    return parsed;
   }
 
   const mintPubkey = new PublicKey(tokenMint);

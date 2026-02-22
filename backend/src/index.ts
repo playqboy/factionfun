@@ -33,6 +33,17 @@ async function main() {
   app.use('/api/token', tokenRoutes);
   app.use('/api/chat', chatRoutes);
 
+  // 404 handler
+  app.use((_req, res) => {
+    res.status(404).json({ error: 'Not found' });
+  });
+
+  // Global error handler
+  app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    console.error('Unhandled error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  });
+
   // Start HTTP server
   const httpServer = app.listen(config.port, () => {
     console.log(`HTTP server running on port ${config.port}`);
