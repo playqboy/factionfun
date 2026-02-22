@@ -1,0 +1,13 @@
+{
+  "name": "factionfun",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter frontend dev & pnpm --filter factionfun-backend dev",
+    "dev:frontend": "pnpm --filter frontend dev",
+    "dev:backend": "pnpm --filter factionfun-backend dev",
+    "build:frontend": "pnpm --filter frontend build",
+    "build:backend": "pnpm --filter factionfun-backend build",
+    "install:all": "pnpm install"
+  }
+}
