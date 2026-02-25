@@ -6,7 +6,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import { createServer } from 'http';
 import { config } from './utils/config.js';
-import { pool, query, testConnection, initPool } from './utils/database.js';
+import { pool, query, testConnection } from './utils/database.js';
 import { tokenRoutes } from './routes/token.js';
 import { chatRoutes } from './routes/chat.js';
 import { globalLimiter } from './middleware/rateLimit.js';
@@ -14,8 +14,6 @@ import { createWebSocketServer } from './websocket/handlers.js';
 import { startRankingJob } from './jobs/updateRankings.js';
 
 async function main() {
-  // Connect to database (resolve hostname to IPv4 first)
-  await initPool();
   await testConnection();
 
   // Create Express app
