@@ -5,17 +5,31 @@ import { serializeHolders, deserializeHolders } from '../utils/serialization.js'
 import type { Holder, TokenInfo, UserStatus } from '../types/index.js';
 
 const HELIUS_RPC = `https://mainnet.helius-rpc.com/?api-key=${config.heliusApiKey}`;
-const connection = new Connection(HELIUS_RPC);
+const connection = new Connection(HELIUS_RPC, { commitment: 'confirmed', confirmTransactionInitialTimeout: 15000 });
 
 const HOLDER_CACHE_TTL = 30; // seconds
 const TOKEN_INFO_CACHE_TTL = 300; // 5 minutes
+const RPC_TIMEOUT = 15_000; // 15 seconds
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms)
+    ),
+  ]);
+}
 
 // Shared internal function: fetches and aggregates all ranked holders from the 20 largest accounts
 async function fetchHoldersInternal(tokenMint: string): Promise<Holder[]> {
   const mintPubkey = new PublicKey(tokenMint);
 
   // 1. Get the 20 largest token accounts for this mint
-  const largestAccounts = await connection.getTokenLargestAccounts(mintPubkey);
+  const largestAccounts = await withTimeout(
+    connection.getTokenLargestAccounts(mintPubkey),
+    RPC_TIMEOUT,
+    'getTokenLargestAccounts'
+  );
 
   if (!largestAccounts.value || largestAccounts.value.length === 0) {
     return [];
@@ -27,10 +41,14 @@ async function fetchHoldersInternal(tokenMint: string): Promise<Holder[]> {
   );
 
   // Fetch account infos and total supply in parallel
-  const [accountInfos, supplyInfo] = await Promise.all([
-    connection.getMultipleParsedAccounts(tokenAccountAddresses),
-    connection.getTokenSupply(mintPubkey),
-  ]);
+  const [accountInfos, supplyInfo] = await withTimeout(
+    Promise.all([
+      connection.getMultipleParsedAccounts(tokenAccountAddresses),
+      connection.getTokenSupply(mintPubkey),
+    ]),
+    RPC_TIMEOUT,
+    'getAccountInfos+getTokenSupply'
+  );
 
   // 3. Aggregate balances by owner wallet (a wallet may have multiple token accounts)
   const ownerBalances = new Map<string, bigint>();
@@ -125,10 +143,14 @@ export async function fetchTokenInfo(tokenMint: string): Promise<TokenInfo> {
 
   const mintPubkey = new PublicKey(tokenMint);
 
-  const [supplyInfo, accountInfo] = await Promise.all([
-    connection.getTokenSupply(mintPubkey),
-    connection.getParsedAccountInfo(mintPubkey),
-  ]);
+  const [supplyInfo, accountInfo] = await withTimeout(
+    Promise.all([
+      connection.getTokenSupply(mintPubkey),
+      connection.getParsedAccountInfo(mintPubkey),
+    ]),
+    RPC_TIMEOUT,
+    'getTokenSupply+getParsedAccountInfo'
+  );
 
   let name = tokenMint.slice(0, 8) + '...';
   let symbol = 'UNKNOWN';

@@ -33,15 +33,18 @@ async function main() {
       },
     } : false,
   }));
+  const allowedOrigins = config.nodeEnv === 'production'
+    ? config.corsOrigin.split(',').flatMap(s => {
+        const o = s.trim().replace(/\/+$/, '');
+        return o.includes('://www.')
+          ? [o, o.replace('://www.', '://')]
+          : [o, o.replace('://', '://www.')];
+      })
+    : null;
+  console.log('[CORS] Allowed origins:', allowedOrigins ?? 'all (development)');
   app.use(cors({
-    origin: config.nodeEnv === 'production'
-      ? config.corsOrigin.split(',').flatMap(s => {
-          const o = s.trim();
-          return o.includes('://www.')
-            ? [o, o.replace('://www.', '://')]
-            : [o, o.replace('://', '://www.')];
-        })
-      : true,
+    origin: allowedOrigins ?? true,
+    credentials: true,
   }));
   app.use(express.json({ limit: '16kb' }));
   app.use(globalLimiter);
@@ -105,6 +108,15 @@ async function main() {
   process.on('SIGINT', shutdown);
   process.on('SIGTERM', shutdown);
 }
+
+// Prevent the process from crashing on unhandled errors
+process.on('unhandledRejection', (reason) => {
+  console.error('[FATAL] Unhandled promise rejection:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('[FATAL] Uncaught exception:', err);
+});
 
 main().catch((err) => {
   console.error('Failed to start server:', err);
