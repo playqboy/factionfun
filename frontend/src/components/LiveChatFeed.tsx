@@ -139,7 +139,7 @@ export default memo(function LiveChatFeed() {
   return (
     <div className="bg-transparent border-0 shadow-none">
       {/* Header */}
-      <div className="px-5 py-3.5 border-b border-white/[0.06] flex items-center justify-between">
+      <div className="px-3 sm:px-5 py-2.5 sm:py-3.5 border-b border-white/[0.06] flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className="flex items-center justify-center w-6 h-6 rounded-md bg-primary/10 border border-primary/20">
             <FaMessage className="w-2.5 h-2.5 text-primary" />
@@ -152,7 +152,7 @@ export default memo(function LiveChatFeed() {
 
       {/* Messages */}
       <div className="p-0">
-        <div className="h-[360px] overflow-hidden relative">
+        <div className="h-[280px] sm:h-[360px] overflow-hidden relative">
           {/* Top fade */}
           <div className="absolute top-0 left-0 right-0 h-10 bg-gradient-to-b from-[#0a0a14]/90 to-transparent z-10 pointer-events-none" />
           {/* Bottom fade */}

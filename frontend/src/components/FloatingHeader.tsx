@@ -9,8 +9,8 @@ export default function FloatingHeader() {
   return (
     <header
       className={cn(
-        "fixed top-5 inset-x-0 z-50",
-        "mx-auto w-full max-w-3xl rounded-lg border border-border-subtle",
+        "fixed top-3 sm:top-5 inset-x-0 z-50",
+        "mx-3 sm:mx-auto w-auto sm:w-full max-w-3xl rounded-lg border border-border-subtle",
         "bg-background/95 supports-[backdrop-filter]:bg-background/80 backdrop-blur-lg shadow-[0_0_20px_rgba(0,0,0,0.4)]"
       )}
     >

@@ -90,8 +90,8 @@ const features = [
 
 function ScrollingFeatures() {
   return (
-    <section id="features" className="py-24 overflow-hidden">
-      <div className="max-w-5xl mx-auto px-6">
+    <section id="features" className="py-16 sm:py-24 overflow-hidden">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6">
         <motion.div
           className="text-center mb-14"
           initial={{ opacity: 0, y: 20 }}
@@ -142,7 +142,7 @@ function ScrollingFeatures() {
           {[0, 1, 2].map((copy) => (
             <div key={copy} className="marquee-content" aria-hidden={copy > 0}>
               {features.map((feature) => (
-                <div key={feature.title} className="w-72 flex-shrink-0">
+                <div key={feature.title} className="w-60 sm:w-72 flex-shrink-0">
                   <GlowingStarsBackgroundCard>
                     <div className="flex items-center gap-3 mb-3">
                       <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-sm icon-box">
@@ -165,7 +165,7 @@ function ScrollingFeatures() {
 export default function LandingPage() {
   return (
     <div className="relative min-h-screen bg-background">
-      <div className="fixed inset-0 z-0 opacity-30">
+      <div className="fixed inset-0 z-0 opacity-15">
         <FaultyTerminal
           tint="#00BFFF"
           scale={2}
@@ -187,7 +187,7 @@ export default function LandingPage() {
       <FloatingHeader />
       <div className="relative z-10">
       {/* Hero */}
-      <div className="flex flex-col items-center justify-center min-h-screen px-6">
+      <div className="flex flex-col items-center justify-center min-h-screen px-4 sm:px-6">
           <motion.div
             className="max-w-3xl text-center"
             initial={{ opacity: 0 }}
@@ -198,7 +198,7 @@ export default function LandingPage() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.6 }}
-              className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.08] mb-5"
+              className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.08] mb-4 sm:mb-5"
             >
               <ShinyText
                 text="The chat room for"
@@ -222,7 +222,7 @@ export default function LandingPage() {
             <TypingText
               text="Every Pump.fun token gets a private group chat. Only the top 10 holders can join. Enter the top 10 to gain access."
               as="p"
-              className="text-base sm:text-lg text-muted-foreground max-w-xl mx-auto mb-8 leading-relaxed"
+              className="text-sm sm:text-base md:text-lg text-muted-foreground max-w-xl mx-auto mb-6 sm:mb-8 leading-relaxed"
               typingSpeed={8}
               initialDelay={800}
               loop={false}
@@ -236,7 +236,7 @@ export default function LandingPage() {
               transition={{ delay: 0.6, duration: 0.5 }}
               className="flex flex-col sm:flex-row items-center justify-center gap-3"
             >
-              <Button asChild size="lg" className="btn-gradient rounded-sm px-8 h-12 text-base font-bold glow-accent-strong">
+              <Button asChild size="lg" className="btn-gradient rounded-sm px-6 sm:px-8 h-11 sm:h-12 text-sm sm:text-base font-bold glow-accent-strong">
                 <Link href="/chat">
                   Launch App
                 </Link>
@@ -249,7 +249,7 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8, duration: 0.7 }}
-            className="mt-14 w-full max-w-2xl mx-auto"
+            className="mt-10 sm:mt-14 w-full max-w-2xl mx-auto"
           >
             <div className="chat-feed-wrapper group">
               {/* Pulsing ambient glow */}
@@ -265,7 +265,7 @@ export default function LandingPage() {
         </div>
 
       {/* How it works */}
-      <section id="how-it-works" className="py-24 px-6 relative">
+      <section id="how-it-works" className="py-16 sm:py-24 px-4 sm:px-6 relative">
         <div className="max-w-5xl mx-auto">
           <motion.div
             className="text-center mb-14"
@@ -283,50 +283,50 @@ export default function LandingPage() {
           </motion.div>
 
           <div className="flex justify-center">
-            <div style={{ height: 540, position: "relative", width: "100%", maxWidth: 440 }}>
+            <div className="card-swap-responsive" style={{ position: "relative", width: "100%" }}>
               <CardSwap
                 cardDistance={50}
                 verticalDistance={40}
                 delay={3000}
                 pauseOnHover={false}
                 easing="elastic"
-                width={380}
-                height={260}
+                width="min(380px, calc(100vw - 48px))"
+                height="min(260px, 56vw)"
                 onSwap={() => window.dispatchEvent(new Event("cardswap"))}
               >
-                <CardSwapCard className="p-6">
+                <CardSwapCard className="p-4 sm:p-6">
                   <div className="flex items-center gap-3 mb-4">
                     <div className="flex items-center justify-center w-9 h-9 rounded-sm icon-box">
                       <FaArrowTrendUp className="w-4 h-4 text-primary" />
                     </div>
                     <span className="text-[11px] font-mono text-muted-foreground">Step 01</span>
                   </div>
-                  <h3 className="text-lg font-bold text-foreground mb-2">Buy the token</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
+                  <h3 className="text-base sm:text-lg font-bold text-foreground mb-2">Buy the token</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                     Get into the top 10 holders of any Pump.fun token to unlock its private chat.
                   </p>
                 </CardSwapCard>
-                <CardSwapCard className="p-6">
+                <CardSwapCard className="p-4 sm:p-6">
                   <div className="flex items-center gap-3 mb-4">
                     <div className="flex items-center justify-center w-9 h-9 rounded-sm icon-box">
                       <FaShieldHalved className="w-4 h-4 text-primary" />
                     </div>
                     <span className="text-[11px] font-mono text-muted-foreground">Step 02</span>
                   </div>
-                  <h3 className="text-lg font-bold text-foreground mb-2">Verify your wallet</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
+                  <h3 className="text-base sm:text-lg font-bold text-foreground mb-2">Verify your wallet</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                     Connect your wallet and sign a message to prove ownership. Free, no SOL needed.
                   </p>
                 </CardSwapCard>
-                <CardSwapCard className="p-6">
+                <CardSwapCard className="p-4 sm:p-6">
                   <div className="flex items-center gap-3 mb-4">
                     <div className="flex items-center justify-center w-9 h-9 rounded-sm icon-box">
                       <FaMessage className="w-4 h-4 text-primary" />
                     </div>
                     <span className="text-[11px] font-mono text-muted-foreground">Step 03</span>
                   </div>
-                  <h3 className="text-lg font-bold text-foreground mb-2">Join the chat</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
+                  <h3 className="text-base sm:text-lg font-bold text-foreground mb-2">Join the chat</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                     Chat directly with other top holders. Coordinate, strategize, shape outcomes.
                   </p>
                 </CardSwapCard>
@@ -340,10 +340,10 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="border-t border-border/30">
-        <div className="max-w-6xl mx-auto px-6 py-12">
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8">
             {/* Brand */}
-            <div className="col-span-2 sm:col-span-1">
+            <div className="col-span-1">
               <div className="flex items-center gap-2 mb-3">
                 <Image src="/logo.png" alt="Factions" width={22} height={22} />
                 <span className="text-sm font-bold text-gradient">

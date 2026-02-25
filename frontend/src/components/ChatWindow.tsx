@@ -117,7 +117,7 @@ const MessageRow = memo(function MessageRow({
         className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
       >
         <div
-          className={`max-w-[70%] px-3.5 py-2 text-[13px] leading-relaxed ${
+          className={`max-w-[85%] sm:max-w-[70%] px-3 sm:px-3.5 py-2 text-[13px] leading-relaxed ${
             isOwn
               ? "bg-gradient-to-br from-primary/10 to-accent-deep/10 border border-primary/15 text-foreground rounded-sm rounded-br-none"
               : "bg-bg-subtle border border-border-subtle text-foreground rounded-sm rounded-bl-none"
@@ -252,13 +252,13 @@ export default memo(function ChatWindow({
     <TooltipProvider>
     <div className="flex flex-col h-full">
       {/* ── Chat header ── */}
-      <div className="px-5 py-3 border-b border-border-subtle flex items-center justify-between flex-shrink-0">
+      <div className="px-3 sm:px-5 py-2.5 sm:py-3 border-b border-border-subtle flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-2.5">
-          <div className="flex items-center justify-center w-7 h-7 rounded-sm icon-box">
-            <FaMessage className="w-3.5 h-3.5 text-primary" />
+          <div className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-sm icon-box">
+            <FaMessage className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary" />
           </div>
-          <div>
-            <span className="text-sm font-semibold text-foreground leading-none block">
+          <div className="min-w-0">
+            <span className="text-xs sm:text-sm font-semibold text-foreground leading-none block truncate">
               {tokenName ? `${tokenName} Faction Chat` : "Faction Chat"}
             </span>
             <span className="text-[10px] text-muted-foreground leading-none mt-0.5 block tabular-nums">
@@ -331,7 +331,7 @@ export default memo(function ChatWindow({
 
       {/* ── Messages ── */}
       <ScrollArea className="flex-1 min-h-0" ref={scrollAreaRef}>
-        <div className="px-5 py-4 space-y-3">
+        <div className="px-3 sm:px-5 py-3 sm:py-4 space-y-2 sm:space-y-3">
           {isLoading ? (
             <div className="flex items-center justify-center py-24">
               <div className="text-center">
@@ -395,7 +395,7 @@ export default memo(function ChatWindow({
       </ScrollArea>
 
       {/* ── Input area ── */}
-      <div className="border-t border-border-subtle flex-shrink-0">
+      <div className="border-t border-border-subtle flex-shrink-0 chat-input-safe">
         {sendError && (
           <div className="px-4 py-2 flex items-center gap-2 text-error bg-error/5 border-b border-error/10">
             <FaTriangleExclamation className="w-3 h-3 flex-shrink-0" />
@@ -404,7 +404,7 @@ export default memo(function ChatWindow({
         )}
         <form
           onSubmit={handleSend}
-          className="px-4 py-3 flex items-center gap-2"
+          className="px-3 sm:px-4 py-2.5 sm:py-3 flex items-center gap-2"
         >
           <Input
             type="text"
@@ -414,7 +414,7 @@ export default memo(function ChatWindow({
             placeholder={inputPlaceholder}
             maxLength={500}
             disabled={!canSend}
-            className="flex-1 bg-bg-subtle-hover border-border-subtle h-10 text-sm focus-visible:ring-primary/30 focus-visible:border-primary/40 placeholder:text-muted-foreground/40"
+            className="flex-1 bg-bg-subtle-hover border-border-subtle h-10 text-sm focus-visible:ring-primary/30 focus-visible:border-primary/40 placeholder:text-muted-foreground/40 placeholder:text-xs sm:placeholder:text-sm"
           />
           <Button
             type="submit"

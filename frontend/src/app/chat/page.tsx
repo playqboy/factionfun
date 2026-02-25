@@ -125,7 +125,7 @@ export default function ChatPage() {
   }, [sidebarOpen]);
 
   return (
-    <div className="h-screen flex bg-background">
+    <div className="h-dvh flex bg-background">
       {/* ── Desktop sidebar ── */}
       <aside className="w-[260px] flex-shrink-0 hidden md:flex flex-col border-r border-border-subtle bg-background">
         {/* Sidebar header */}
@@ -310,11 +310,11 @@ export default function ChatPage() {
           {sidebarOpen && (
             <motion.aside
               key="sidebar"
-              initial={{ x: -260 }}
+              initial={{ x: -288 }}
               animate={{ x: 0 }}
-              exit={{ x: -260 }}
+              exit={{ x: -288 }}
               transition={{ type: "spring", damping: 28, stiffness: 300 }}
-              className="fixed left-0 top-0 bottom-0 w-[260px] bg-background border-r border-border-subtle z-40 md:hidden flex flex-col"
+              className="fixed left-0 top-0 bottom-0 w-[calc(100vw-56px)] max-w-[288px] bg-background border-r border-border-subtle z-40 md:hidden flex flex-col"
             >
               {/* Mobile sidebar header */}
               <div className="h-14 flex items-center justify-between px-5 border-b border-border-subtle flex-shrink-0">
@@ -388,20 +388,20 @@ export default function ChatPage() {
         {/* Chat area */}
         <div className="flex-1 flex flex-col min-h-0">
           {!tokenMint ? (
-            <div className="flex-1 flex items-center justify-center p-6">
+            <div className="flex-1 flex items-center justify-center p-4 sm:p-6">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
                 className="text-center"
               >
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-sm icon-box mb-6">
+                <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-sm icon-box mb-4 sm:mb-6">
                   <FaMessage className="w-7 h-7 text-primary" />
                 </div>
-                <h3 className="text-xl font-bold text-foreground mb-2">
+                <h3 className="text-lg sm:text-xl font-bold text-foreground mb-2">
                   Enter a Faction
                 </h3>
-                <p className="text-sm text-muted-foreground leading-relaxed max-w-xs mx-auto mb-8">
+                <p className="text-sm text-muted-foreground leading-relaxed max-w-[280px] sm:max-w-xs mx-auto mb-8">
                   Paste a Pump.fun token mint address to view its leaderboard
                   and join the top-holder chat.
                 </p>

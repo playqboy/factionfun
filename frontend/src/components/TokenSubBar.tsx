@@ -95,7 +95,7 @@ export default memo(function TokenSubBar({
       : "No holdings found";
 
   return (
-    <div className="h-11 border-b border-border-subtle flex-shrink-0 hidden md:flex items-center bg-background/60">
+    <div className="h-10 sm:h-11 border-b border-border-subtle flex-shrink-0 flex items-center bg-background/60">
       {/* Tab icons */}
       <div className="flex items-center gap-0.5 px-2 flex-shrink-0">
         <button
