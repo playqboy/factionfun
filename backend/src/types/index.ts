@@ -56,3 +56,26 @@ export interface UserStatus {
   balance?: bigint;
   percentage?: number;
 }
+
+export interface Favorite {
+  id: number;
+  walletAddress: string;
+  tokenMint: string;
+  name: string | null;
+  symbol: string | null;
+  imageUri: string | null;
+  createdAt: Date;
+}
+
+export interface WalletHolding {
+  mint: string;
+  name: string;
+  symbol: string;
+  imageUri: string | null;
+  balance: string;
+  decimals: number;
+  uiAmount: number;
+  isTop10: boolean;
+  rank: number | null;
+  marketCap: number | null;
+}

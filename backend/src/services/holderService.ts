@@ -10,14 +10,8 @@ const connection = new Connection(HELIUS_RPC);
 const HOLDER_CACHE_TTL = 30; // seconds
 const TOKEN_INFO_CACHE_TTL = 300; // 5 minutes
 
-export async function fetchTopHolders(tokenMint: string): Promise<Holder[]> {
-  // Check cache
-  const cacheKey = `holders:${tokenMint}`;
-  const cached = cache.get(cacheKey);
-  if (cached) {
-    return deserializeHolders(cached);
-  }
-
+// Shared internal function: fetches and aggregates all ranked holders from the 20 largest accounts
+async function fetchHoldersInternal(tokenMint: string): Promise<Holder[]> {
   const mintPubkey = new PublicKey(tokenMint);
 
   // 1. Get the 20 largest token accounts for this mint
@@ -56,12 +50,11 @@ export async function fetchTopHolders(tokenMint: string): Promise<Holder[]> {
   // 4. Get total supply for percentage calculation
   const totalSupply = BigInt(supplyInfo.value.amount);
 
-  // 5. Sort by balance descending, take top 10
+  // 5. Sort by balance descending
   const sorted = Array.from(ownerBalances.entries())
-    .sort((a, b) => (b[1] > a[1] ? 1 : b[1] < a[1] ? -1 : 0))
-    .slice(0, 10);
+    .sort((a, b) => (b[1] > a[1] ? 1 : b[1] < a[1] ? -1 : 0));
 
-  const holders: Holder[] = sorted.map(([walletAddress, balance], index) => ({
+  return sorted.map(([walletAddress, balance], index) => ({
     walletAddress,
     balance,
     percentage: totalSupply > 0n
@@ -69,23 +62,45 @@ export async function fetchTopHolders(tokenMint: string): Promise<Holder[]> {
       : 0,
     rank: index + 1,
   }));
+}
 
-  // 6. Cache result
-  cache.set(cacheKey, serializeHolders(holders), HOLDER_CACHE_TTL);
+export async function fetchTopHolders(tokenMint: string): Promise<Holder[]> {
+  const cacheKey = `holders:${tokenMint}`;
+  const cached = cache.get(cacheKey);
+  if (cached) {
+    return deserializeHolders(cached);
+  }
 
-  return holders;
+  const all = await fetchHoldersInternal(tokenMint);
+  const top10 = all.slice(0, 10);
+
+  cache.set(cacheKey, serializeHolders(top10), HOLDER_CACHE_TTL);
+  return top10;
+}
+
+export async function fetchAllRankedHolders(tokenMint: string): Promise<Holder[]> {
+  const cacheKey = `holders-all:${tokenMint}`;
+  const cached = cache.get(cacheKey);
+  if (cached) {
+    return deserializeHolders(cached);
+  }
+
+  const all = await fetchHoldersInternal(tokenMint);
+
+  cache.set(cacheKey, serializeHolders(all), HOLDER_CACHE_TTL);
+  return all;
 }
 
 export async function getUserStatus(
   tokenMint: string,
   walletAddress: string
 ): Promise<UserStatus> {
-  const holders = await fetchTopHolders(tokenMint);
+  const holders = await fetchAllRankedHolders(tokenMint);
   const match = holders.find((h) => h.walletAddress === walletAddress);
 
   if (match) {
     return {
-      isInTop10: true,
+      isInTop10: match.rank <= 10,
       rank: match.rank,
       balance: match.balance,
       percentage: match.percentage,

@@ -62,3 +62,20 @@ CREATE TABLE IF NOT EXISTS membership_events (
 
 CREATE INDEX IF NOT EXISTS idx_membership_events_token
   ON membership_events(token_mint, created_at DESC);
+
+-- Favorites table
+CREATE TABLE IF NOT EXISTS favorites (
+  id SERIAL PRIMARY KEY,
+  wallet_address VARCHAR(44) NOT NULL,
+  token_mint VARCHAR(44) NOT NULL,
+  name VARCHAR(100),
+  symbol VARCHAR(20),
+  image_uri TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  CONSTRAINT fk_favorites_user
+    FOREIGN KEY (wallet_address) REFERENCES users(wallet_address),
+  UNIQUE (wallet_address, token_mint)
+);
+
+CREATE INDEX IF NOT EXISTS idx_favorites_wallet
+  ON favorites(wallet_address);

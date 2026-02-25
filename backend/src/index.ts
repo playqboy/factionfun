@@ -9,6 +9,8 @@ import { config } from './utils/config.js';
 import { pool, query, testConnection } from './utils/database.js';
 import { tokenRoutes } from './routes/token.js';
 import { chatRoutes } from './routes/chat.js';
+import { walletRoutes } from './routes/wallet.js';
+import { favoriteRoutes } from './routes/favorite.js';
 import { globalLimiter } from './middleware/rateLimit.js';
 import { createWebSocketServer } from './websocket/handlers.js';
 import { startRankingJob } from './jobs/updateRankings.js';
@@ -29,7 +31,9 @@ async function main() {
       },
     } : false,
   }));
-  app.use(cors({ origin: config.corsOrigin }));
+  app.use(cors({
+    origin: config.nodeEnv === 'production' ? config.corsOrigin : true,
+  }));
   app.use(express.json({ limit: '16kb' }));
   app.use(globalLimiter);
 
@@ -46,6 +50,8 @@ async function main() {
   // Routes
   app.use('/api/token', tokenRoutes);
   app.use('/api/chat', chatRoutes);
+  app.use('/api/wallet', walletRoutes);
+  app.use('/api/favorites', favoriteRoutes);
 
   // 404 handler
   app.use((_req, res) => {
