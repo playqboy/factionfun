@@ -27,6 +27,7 @@ import Leaderboard from "@/components/Leaderboard";
 import ChatWindow from "@/components/ChatWindow";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import TokenSubBar from "@/components/TokenSubBar";
+import SidebarLiveFeed from "@/components/SidebarLiveFeed";
 import { useWalletHoldings } from "@/hooks/useWalletHoldings";
 import { useFavorites } from "@/hooks/useFavorites";
 
@@ -144,7 +145,7 @@ export default function ChatPage() {
         </div>
 
         {/* Sidebar content */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto min-h-0">
           <div className="p-4">
             <motion.div
               initial={{ opacity: 0, y: 6 }}
@@ -176,6 +177,11 @@ export default function ChatPage() {
               </div>
             </>
           )}
+        </div>
+
+        {/* Global live feed */}
+        <div className="min-h-0 h-[40%] flex-shrink-0">
+          <SidebarLiveFeed />
         </div>
       </aside>
 
@@ -335,7 +341,7 @@ export default function ChatPage() {
               </div>
 
               {/* Mobile sidebar content */}
-              <div className="flex-1 overflow-y-auto">
+              <div className="flex-1 overflow-y-auto min-h-0">
                 <div className="p-4">
                   <TokenSelector
                     onSelect={(mint) => {
@@ -357,6 +363,11 @@ export default function ChatPage() {
                     </div>
                   </>
                 )}
+              </div>
+
+              {/* Global live feed */}
+              <div className="min-h-0 h-[40%] flex-shrink-0">
+                <SidebarLiveFeed />
               </div>
             </motion.aside>
           )}

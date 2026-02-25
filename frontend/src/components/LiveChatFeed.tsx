@@ -1,149 +1,211 @@
 "use client";
 
-import { useState, useEffect, useCallback, memo } from "react";
+import { useState, useEffect, useRef, memo } from "react";
 import { FaMessage } from "react-icons/fa6";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { fetchRecentMessages, type FeedMessageResponse } from "@/lib/api";
-import { createFeedSocket } from "@/lib/websocket";
 
-interface FeedMessage {
-  id: number;
+interface MockMessage {
   wallet: string;
   content: string;
   ticker: string;
-  timestamp: number;
 }
 
-function truncateAddress(address: string): string {
-  if (address.length <= 10) return address;
-  return `${address.slice(0, 4)}..${address.slice(-4)}`;
-}
+const CONVERSATION: MockMessage[] = [
+  { wallet: "7xKp..3nFq", content: "just crossed 2.1M tokens... top 3 now", ticker: "$FOMO" },
+  { wallet: "9dRm..vL2x", content: "nice, welcome to the inner circle", ticker: "$FOMO" },
+  { wallet: "3pWz..8kTn", content: "anyone else watching this pump? dev wallet hasn't sold", ticker: "$FOMO" },
+  { wallet: "7xKp..3nFq", content: "yeah the chart looks insane rn. holding everything", ticker: "$FOMO" },
+  { wallet: "Bx4f..mQ9s", content: "we coordinating on this or what", ticker: "$FOMO" },
+  { wallet: "9dRm..vL2x", content: "diamond hands only in here. no paper hands allowed", ticker: "$FOMO" },
+  { wallet: "3pWz..8kTn", content: "lol someone just dropped out of top 10. new guy incoming?", ticker: "$FOMO" },
+  { wallet: "Fy7j..2eHc", content: "that's me. just aped in 500 SOL worth", ticker: "$FOMO" },
+  { wallet: "7xKp..3nFq", content: "welcome to the faction", ticker: "$FOMO" },
+  { wallet: "Bx4f..mQ9s", content: "this chat is actually so based. top holder coordination hits different", ticker: "$FOMO" },
+  { wallet: "9dRm..vL2x", content: "nobody selling before we hit 100M mcap. agreed?", ticker: "$FOMO" },
+  { wallet: "3pWz..8kTn", content: "agreed. let's run it", ticker: "$FOMO" },
+];
 
-function toFeedMessage(msg: FeedMessageResponse): FeedMessage {
-  return {
-    id: msg.id,
-    wallet: truncateAddress(msg.walletAddress),
-    content: msg.content,
-    ticker: `$${msg.tokenSymbol}`,
-    timestamp: new Date(msg.createdAt).getTime(),
-  };
-}
+const TYPING_SPEED = 30;       // ms per character
+const PAUSE_BETWEEN = 1800;    // ms pause between messages
+const TYPING_INDICATOR_MS = 1200; // ms to show "typing..." before message appears
+const INITIAL_MESSAGES = 3;    // messages visible on load
 
-const MAX_MESSAGES = 15;
+interface DisplayMessage extends MockMessage {
+  id: number;
+  displayedText: string;
+  isComplete: boolean;
+}
 
 export default memo(function LiveChatFeed() {
-  const [messages, setMessages] = useState<FeedMessage[]>([]);
-  const [connected, setConnected] = useState(false);
+  const [messages, setMessages] = useState<DisplayMessage[]>([]);
+  const [showTypingIndicator, setShowTypingIndicator] = useState(false);
+  const [typingWallet, setTypingWallet] = useState("");
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const idCounter = useRef(0);
 
-  // Fetch initial messages from the API
   useEffect(() => {
+    // Seed initial messages (already "sent")
+    const initial: DisplayMessage[] = CONVERSATION.slice(0, INITIAL_MESSAGES).map((msg) => ({
+      ...msg,
+      id: idCounter.current++,
+      displayedText: msg.content,
+      isComplete: true,
+    }));
+    setMessages(initial);
+
+    let nextIndex = INITIAL_MESSAGES;
     let cancelled = false;
 
-    fetchRecentMessages()
-      .then((data) => {
+    function scheduleNext() {
+      if (cancelled) return;
+
+      const msgIndex = nextIndex % CONVERSATION.length;
+
+      // If we've looped, reset
+      if (msgIndex === 0 && nextIndex > 0) {
+        idCounter.current = 0;
+        const reset: DisplayMessage[] = CONVERSATION.slice(0, INITIAL_MESSAGES).map((msg) => ({
+          ...msg,
+          id: idCounter.current++,
+          displayedText: msg.content,
+          isComplete: true,
+        }));
+        setMessages(reset);
+        setShowTypingIndicator(false);
+        nextIndex = INITIAL_MESSAGES;
+        setTimeout(scheduleNext, PAUSE_BETWEEN);
+        return;
+      }
+
+      const mockMsg = CONVERSATION[msgIndex];
+
+      // Show typing indicator
+      setTypingWallet(mockMsg.wallet);
+      setShowTypingIndicator(true);
+
+      setTimeout(() => {
         if (cancelled) return;
-        const feed = data.map(toFeedMessage).slice(0, MAX_MESSAGES);
-        setMessages(feed);
-      })
-      .catch(() => {
-        // Backend unavailable — feed stays empty
-      });
+        setShowTypingIndicator(false);
+
+        // Add the message with empty text, then type it out
+        const msgId = idCounter.current++;
+        const newMsg: DisplayMessage = {
+          ...mockMsg,
+          id: msgId,
+          displayedText: "",
+          isComplete: false,
+        };
+
+        setMessages((prev) => [...prev, newMsg]);
+
+        // Type out character by character
+        let charIndex = 0;
+        const typeInterval = setInterval(() => {
+          if (cancelled) {
+            clearInterval(typeInterval);
+            return;
+          }
+          charIndex++;
+          const text = mockMsg.content.slice(0, charIndex);
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === msgId ? { ...m, displayedText: text, isComplete: charIndex >= mockMsg.content.length } : m
+            )
+          );
+          if (charIndex >= mockMsg.content.length) {
+            clearInterval(typeInterval);
+            nextIndex++;
+            setTimeout(scheduleNext, PAUSE_BETWEEN);
+          }
+        }, TYPING_SPEED);
+      }, TYPING_INDICATOR_MS);
+    }
+
+    const initialDelay = setTimeout(scheduleNext, PAUSE_BETWEEN);
 
     return () => {
       cancelled = true;
+      clearTimeout(initialDelay);
     };
   }, []);
 
-  // Subscribe to real-time messages via WebSocket
-  const handleWsMessage = useCallback(
-    (event: { type: string; data: unknown }) => {
-      if (event.type === "message") {
-        const raw = event.data as {
-          id: number;
-          tokenMint: string;
-          walletAddress: string;
-          content: string;
-          createdAt: string;
-          tokenSymbol?: string;
-        };
-        const msg: FeedMessage = {
-          id: raw.id,
-          wallet: truncateAddress(raw.walletAddress),
-          content: raw.content,
-          ticker: `$${raw.tokenSymbol || raw.tokenMint.slice(0, 6)}`,
-          timestamp: new Date(raw.createdAt).getTime(),
-        };
-        setMessages((prev) => [msg, ...prev].slice(0, MAX_MESSAGES));
-      }
-    },
-    []
-  );
-
+  // Auto-scroll to bottom when new messages appear
   useEffect(() => {
-    const socket = createFeedSocket(handleWsMessage, {
-      onConnect: () => setConnected(true),
-      onDisconnect: () => setConnected(false),
-    });
-
-    return () => {
-      socket.close();
-    };
-  }, [handleWsMessage]);
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages, showTypingIndicator]);
 
   return (
-    <Card className="bg-card/60 border-border/40 backdrop-blur overflow-hidden">
+    <div className="bg-transparent border-0 shadow-none">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-border/40 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <FaMessage className="w-3.5 h-3.5 text-primary" />
-          <span className="text-xs font-semibold text-foreground">
-            Live Feed
+      <div className="px-5 py-3.5 border-b border-white/[0.06] flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className="flex items-center justify-center w-6 h-6 rounded-md bg-primary/10 border border-primary/20">
+            <FaMessage className="w-2.5 h-2.5 text-primary" />
+          </div>
+          <span className="text-xs font-semibold tracking-wide text-foreground/90 uppercase">
+            Messaging Feed
           </span>
         </div>
       </div>
 
       {/* Messages */}
-      <CardContent className="p-0">
+      <div className="p-0">
         <div className="h-[360px] overflow-hidden relative">
           {/* Top fade */}
-          <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-card/90 to-transparent z-10 pointer-events-none" />
+          <div className="absolute top-0 left-0 right-0 h-10 bg-gradient-to-b from-[#0a0a14]/90 to-transparent z-10 pointer-events-none" />
           {/* Bottom fade */}
-          <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-card/90 to-transparent z-10 pointer-events-none" />
+          <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-[#0a0a14]/90 to-transparent z-10 pointer-events-none" />
 
-          <div className="px-3 py-2 space-y-0.5">
-            {messages.length === 0 && (
-              <div className="flex items-center justify-center h-[340px]">
-                <p className="text-xs text-muted-foreground">
-                  No messages yet — be the first to chat
-                </p>
-              </div>
-            )}
-            {messages.map((msg, i) => (
+          <div ref={scrollRef} className="px-3 py-2 space-y-px h-full overflow-y-auto scrollbar-hide">
+            {messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`flex items-start gap-2 py-1.5 px-2 rounded-sm hover:bg-secondary/30 transition-colors${i === 0 ? " animate-fade-in" : ""}`}
+                className="flex items-start gap-2.5 py-2 px-2.5 rounded-md hover:bg-white/[0.03] transition-colors duration-200 animate-fade-in"
               >
                 <div className="flex-shrink-0 mt-0.5">
-                  <span className="text-[10px] font-mono text-primary/70 bg-primary/5 px-1.5 py-0.5 rounded-sm border border-primary/10">
+                  <Badge variant="outline" className="text-[10px] font-mono text-primary/80 bg-primary/[0.06] border-primary/15 px-1.5 py-0.5 rounded-md">
                     {msg.ticker}
-                  </span>
+                  </Badge>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] font-mono text-muted-foreground">
-                      {msg.wallet}
-                    </span>
-                  </div>
-                  <p className="text-xs text-foreground/80 leading-relaxed">
-                    {msg.content}
+                  <span className="text-[10px] font-mono text-muted-foreground/70">
+                    {msg.wallet}
+                  </span>
+                  <p className="text-xs text-foreground/80 leading-relaxed mt-0.5">
+                    {msg.displayedText}
+                    {!msg.isComplete && (
+                      <span className="inline-block w-[2px] h-3 bg-primary/70 ml-0.5 align-middle animate-pulse" />
+                    )}
                   </p>
                 </div>
               </div>
             ))}
+
+            {/* Typing indicator */}
+            {showTypingIndicator && (
+              <div className="flex items-start gap-2.5 py-2 px-2.5 rounded-md animate-fade-in">
+                <div className="flex-shrink-0 mt-0.5">
+                  <Badge variant="outline" className="text-[10px] font-mono text-primary/80 bg-primary/[0.06] border-primary/15 px-1.5 py-0.5 rounded-md">
+                    $FOMO
+                  </Badge>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="text-[10px] font-mono text-muted-foreground/70">
+                    {typingWallet}
+                  </span>
+                  <div className="flex items-center gap-1 mt-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary/50 animate-bounce [animation-delay:0ms]" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary/50 animate-bounce [animation-delay:150ms]" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary/50 animate-bounce [animation-delay:300ms]" />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 });
