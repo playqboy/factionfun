@@ -19,8 +19,8 @@ import {
 import { Button } from "@/components/ui/button";
 import dynamic from "next/dynamic";
 
-const FaultyTerminal = dynamic(
-  () => import("@/components/FaultyTerminal"),
+const Beams = dynamic(
+  () => import("@/components/Beams"),
   { ssr: false }
 );
 const CardSwap = dynamic(
@@ -165,23 +165,16 @@ function ScrollingFeatures() {
 export default function LandingPage() {
   return (
     <div className="relative min-h-screen bg-background">
-      <div className="fixed inset-0 z-0 opacity-15">
-        <FaultyTerminal
-          tint="#00BFFF"
-          scale={2}
-          gridMul={[3, 2]}
-          digitSize={1.2}
-          timeScale={0.3}
-          scanlineIntensity={0.2}
-          glitchAmount={0.5}
-          flickerAmount={0.3}
-          noiseAmp={1}
-          chromaticAberration={0}
-          curvature={0}
-          mouseReact={true}
-          mouseStrength={0.2}
-          brightness={0.8}
-          pageLoadAnimation={true}
+      <div className="fixed inset-0 z-0 opacity-40">
+        <Beams
+          beamWidth={3}
+          beamHeight={30}
+          beamNumber={20}
+          lightColor="#00BFFF"
+          speed={2}
+          noiseIntensity={1.75}
+          scale={0.2}
+          rotation={30}
         />
       </div>
       <FloatingHeader />
