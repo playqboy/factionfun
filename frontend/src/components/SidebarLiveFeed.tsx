@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback, memo } from "react";
 import { FaMessage, FaChevronDown, FaChevronUp } from "react-icons/fa6";
 import { fetchRecentMessages, type FeedMessageResponse } from "@/lib/api";
 import { createFeedSocket, type WSEvent } from "@/lib/websocket";
+import { truncateWallet } from "@/lib/utils";
 
 interface DisplayMessage {
   id: number;
@@ -23,10 +24,6 @@ function toDisplay(msg: FeedMessageResponse): DisplayMessage {
   };
 }
 
-function shortenAddress(addr: string): string {
-  if (addr.length <= 10) return addr;
-  return `${addr.slice(0, 4)}..${addr.slice(-4)}`;
-}
 
 const MAX_MESSAGES = 50;
 
@@ -134,10 +131,10 @@ export default memo(function SidebarLiveFeed() {
                     {msg.tokenSymbol.startsWith("$") ? msg.tokenSymbol : `$${msg.tokenSymbol}`}
                   </span>
                   <span className="text-[9px] text-muted-foreground/40 font-mono truncate">
-                    {shortenAddress(msg.tokenMint)}
+                    {truncateWallet(msg.tokenMint)}
                   </span>
                   <span className="ml-auto text-[9px] text-muted-foreground/50 font-mono flex-shrink-0">
-                    {shortenAddress(msg.walletAddress)}
+                    {truncateWallet(msg.walletAddress)}
                   </span>
                 </div>
                 <p className="text-[11px] text-foreground/70 leading-snug truncate">

@@ -11,7 +11,7 @@ import {
   FaStar,
 } from "react-icons/fa6";
 import type { ChatMessageResponse, HolderResponse } from "@/lib/api";
-import { formatTime } from "@/lib/utils";
+import { formatTime, formatMarketCap } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -275,13 +275,7 @@ export default memo(function ChatWindow({
               <div className="hidden sm:flex items-center gap-2 text-[11px] text-muted-foreground font-mono">
                 {marketCap != null && marketCap > 0 && (
                   <span className="text-primary/80 font-semibold tabular-nums">
-                    {marketCap >= 1_000_000_000
-                      ? `$${(marketCap / 1_000_000_000).toFixed(1)}B`
-                      : marketCap >= 1_000_000
-                        ? `$${(marketCap / 1_000_000).toFixed(1)}M`
-                        : marketCap >= 1_000
-                          ? `$${(marketCap / 1_000).toFixed(1)}K`
-                          : `$${marketCap.toFixed(0)}`}
+                    {formatMarketCap(marketCap)}
                   </span>
                 )}
                 {tokenSymbol && (

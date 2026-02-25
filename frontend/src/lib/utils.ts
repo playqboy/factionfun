@@ -10,12 +10,11 @@ export function truncateWallet(address: string): string {
   return `${address.slice(0, 4)}...${address.slice(-4)}`;
 }
 
-export function formatBalance(balance: number | string): string {
-  const num = typeof balance === "string" ? parseFloat(balance) : balance;
-  if (num >= 1_000_000_000) return `${(num / 1_000_000_000).toFixed(2)}B`;
-  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(2)}M`;
-  if (num >= 1_000) return `${(num / 1_000).toFixed(2)}K`;
-  return num.toFixed(2);
+export function formatMarketCap(mcap: number): string {
+  if (mcap >= 1_000_000_000) return `$${(mcap / 1_000_000_000).toFixed(1)}B`;
+  if (mcap >= 1_000_000) return `$${(mcap / 1_000_000).toFixed(1)}M`;
+  if (mcap >= 1_000) return `$${(mcap / 1_000).toFixed(1)}K`;
+  return `$${mcap.toFixed(0)}`;
 }
 
 export function formatTime(dateStr: string): string {

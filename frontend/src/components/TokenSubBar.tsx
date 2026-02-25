@@ -9,6 +9,7 @@ import {
   TooltipProvider,
 } from "@/components/ui/tooltip";
 import type { WalletHoldingResponse, FavoriteResponse } from "@/lib/api";
+import { formatMarketCap } from "@/lib/utils";
 
 type Tab = "favorites" | "holdings";
 
@@ -21,12 +22,6 @@ interface TokenSubBarProps {
   onSelect: (mint: string) => void;
 }
 
-function formatMarketCap(mcap: number): string {
-  if (mcap >= 1_000_000_000) return `$${(mcap / 1_000_000_000).toFixed(1)}B`;
-  if (mcap >= 1_000_000) return `$${(mcap / 1_000_000).toFixed(1)}M`;
-  if (mcap >= 1_000) return `$${(mcap / 1_000).toFixed(1)}K`;
-  return `$${mcap.toFixed(0)}`;
-}
 
 function TokenIcon({
   imageUri,
