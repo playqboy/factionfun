@@ -276,7 +276,7 @@ export default function LandingPage() {
           </motion.div>
 
           <div className="flex justify-center">
-            <div className="card-swap-responsive" style={{ position: "relative", width: "100%" }}>
+            <div className="card-swap-responsive" style={{ position: "relative", width: "100%", transform: "translateX(-50px)" }}>
               <CardSwap
                 cardDistance={50}
                 verticalDistance={40}
