@@ -1,5 +1,9 @@
 import pg from 'pg';
+import dns from 'node:dns';
 import { config } from './config.js';
+
+// Force IPv4 — Railway doesn't support IPv6 outbound
+dns.setDefaultResultOrder('ipv4first');
 
 const { Pool } = pg;
 
@@ -8,6 +12,7 @@ export const pool = new Pool({
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
+  ssl: { rejectUnauthorized: false },
 });
 
 pool.on('error', (err) => {
