@@ -273,14 +273,14 @@ export default function LandingPage() {
               </p>
               <ul className="space-y-2">
                 <li>
-                  <a href="https://docs.factions.fun" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-                    Docs
-                  </a>
+                  <Link href="/#how-it-works" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                    How It Works
+                  </Link>
                 </li>
                 <li>
-                  <a href="https://github.com/factionsfun" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-                    GitHub
-                  </a>
+                  <Link href="/#features" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                    Features
+                  </Link>
                 </li>
               </ul>
             </div>

@@ -1,6 +1,6 @@
 import { type Request, type Response, type NextFunction } from 'express';
 import { privyClient, verifyPrivyToken } from '../utils/privy.js';
-import { redisClient } from '../utils/redis.js';
+import { cache } from '../utils/cache.js';
 import { query } from '../utils/database.js';
 
 export interface AuthenticatedRequest extends Request {
@@ -27,9 +27,9 @@ export async function requireAuth(
     // 1. Verify the Privy access token
     const claims = await verifyPrivyToken(token);
 
-    // 2. Resolve Solana wallet address (with Redis cache)
+    // 2. Resolve Solana wallet address (with cache)
     const cacheKey = `privy:wallet:${claims.user_id}`;
-    let walletAddress = await redisClient.get(cacheKey);
+    let walletAddress = cache.get(cacheKey);
 
     if (!walletAddress) {
       const user = await privyClient.users()._get(claims.user_id);
@@ -46,7 +46,7 @@ export async function requireAuth(
       }
 
       walletAddress = solanaWallet.address;
-      await redisClient.set(cacheKey, walletAddress, { EX: WALLET_CACHE_TTL });
+      cache.set(cacheKey, walletAddress, WALLET_CACHE_TTL);
     }
 
     req.walletAddress = walletAddress;

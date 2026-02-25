@@ -67,7 +67,7 @@ export default function FloatingHeader() {
             </Button>
             <SheetContent
               className="bg-background/95 supports-[backdrop-filter]:bg-background/80 gap-0 backdrop-blur-lg border-white/[0.06]"
-              showClose={false}
+              showCloseButton={false}
               side="left"
             >
               <SheetTitle className="sr-only">Navigation</SheetTitle>

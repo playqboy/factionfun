@@ -1,5 +1,5 @@
 import { query } from '../utils/database.js';
-import { redisClient } from '../utils/redis.js';
+import { cache } from '../utils/cache.js';
 import { sanitizeMessageContent, validateMessageContent } from '../utils/validation.js';
 import type { ChatMessage } from '../types/index.js';
 
@@ -83,7 +83,7 @@ export async function getRecentMessagesGlobal(
 
   if (mints.length > 0) {
     const keys = mints.map((m) => `tokeninfo:${m}`);
-    const cached = await redisClient.mGet(keys);
+    const cached = cache.mGet(keys);
     for (let i = 0; i < mints.length; i++) {
       const raw = cached[i];
       if (raw) {
@@ -111,7 +111,7 @@ export async function getRecentMessagesGlobal(
 
 export async function getTokenSymbol(tokenMint: string): Promise<string> {
   try {
-    const cached = await redisClient.get(`tokeninfo:${tokenMint}`);
+    const cached = cache.get(`tokeninfo:${tokenMint}`);
     if (cached) {
       const info = JSON.parse(cached);
       return info.symbol || tokenMint.slice(0, 6);

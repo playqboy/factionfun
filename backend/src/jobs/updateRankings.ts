@@ -1,16 +1,15 @@
 import { fetchTopHolders } from '../services/holderService.js';
 import { pool } from '../utils/database.js';
-import { redisClient } from '../utils/redis.js';
 import { getActiveTokenMints, broadcastRankingUpdate, broadcastMembershipEvent } from '../websocket/handlers.js';
 
 const UPDATE_INTERVAL = 30000; // 30 seconds
-const LOCK_TTL = 25; // seconds
+
+// Simple in-memory lock set — prevents overlapping runs per token
+const activeLocks = new Set<string>();
 
 async function updateRankingsForToken(tokenMint: string): Promise<void> {
-  // Redis lock to prevent overlapping runs
-  const lockKey = `lock:rankings:${tokenMint}`;
-  const acquired = await redisClient.set(lockKey, '1', { EX: LOCK_TTL, NX: true });
-  if (!acquired) return;
+  if (activeLocks.has(tokenMint)) return;
+  activeLocks.add(tokenMint);
 
   const client = await pool.connect();
   try {
@@ -97,7 +96,7 @@ async function updateRankingsForToken(tokenMint: string): Promise<void> {
     console.error(`Failed to update rankings for ${tokenMint}:`, err);
   } finally {
     client.release();
-    await redisClient.del(lockKey);
+    activeLocks.delete(tokenMint);
   }
 }
 

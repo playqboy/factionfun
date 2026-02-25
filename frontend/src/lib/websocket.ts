@@ -1,4 +1,4 @@
-const WS_BASE = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:3002";
+const WS_BASE = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:3001";
 
 export type WSEventType = "message" | "rankings" | "user_joined" | "user_left";
 

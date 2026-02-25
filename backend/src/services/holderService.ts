@@ -1,6 +1,6 @@
 import { Connection, PublicKey } from '@solana/web3.js';
 import { config } from '../utils/config.js';
-import { redisClient } from '../utils/redis.js';
+import { cache } from '../utils/cache.js';
 import { serializeHolders, deserializeHolders } from '../utils/serialization.js';
 import type { Holder, TokenInfo, UserStatus } from '../types/index.js';
 
@@ -13,7 +13,7 @@ const TOKEN_INFO_CACHE_TTL = 300; // 5 minutes
 export async function fetchTopHolders(tokenMint: string): Promise<Holder[]> {
   // Check cache
   const cacheKey = `holders:${tokenMint}`;
-  const cached = await redisClient.get(cacheKey);
+  const cached = cache.get(cacheKey);
   if (cached) {
     return deserializeHolders(cached);
   }
@@ -71,7 +71,7 @@ export async function fetchTopHolders(tokenMint: string): Promise<Holder[]> {
   }));
 
   // 6. Cache result
-  await redisClient.set(cacheKey, serializeHolders(holders), { EX: HOLDER_CACHE_TTL });
+  cache.set(cacheKey, serializeHolders(holders), HOLDER_CACHE_TTL);
 
   return holders;
 }
@@ -97,7 +97,7 @@ export async function getUserStatus(
 
 export async function fetchTokenInfo(tokenMint: string): Promise<TokenInfo> {
   const cacheKey = `tokeninfo:${tokenMint}`;
-  const cached = await redisClient.get(cacheKey);
+  const cached = cache.get(cacheKey);
   if (cached) {
     const parsed = JSON.parse(cached);
     parsed.totalSupply = BigInt(parsed.totalSupply);
@@ -154,10 +154,10 @@ export async function fetchTokenInfo(tokenMint: string): Promise<TokenInfo> {
   };
 
   // Cache (serialize bigint as string)
-  await redisClient.set(
+  cache.set(
     cacheKey,
     JSON.stringify(info, (_k, v) => (typeof v === 'bigint' ? v.toString() : v)),
-    { EX: TOKEN_INFO_CACHE_TTL }
+    TOKEN_INFO_CACHE_TTL
   );
 
   return info;

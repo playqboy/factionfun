@@ -1,4 +1,4 @@
-import rateLimit from 'express-rate-limit';
+import { rateLimit } from 'express-rate-limit';
 import { config } from '../utils/config.js';
 import type { AuthenticatedRequest } from './auth.js';
 

@@ -17,6 +17,23 @@ export const metadata: Metadata = {
   title: "Factions.fun — On-Chain Group Chat for Top Holders",
   description:
     "Private chat rooms for the top 10 holders of any Pump.fun token. Enter the top 10 to gain access.",
+  openGraph: {
+    title: "Factions.fun — On-Chain Group Chat for Top Holders",
+    description:
+      "Private chat rooms for the top 10 holders of any Pump.fun token. Enter the top 10 to gain access.",
+    url: "https://factions.fun",
+    siteName: "Factions.fun",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Factions.fun — On-Chain Group Chat for Top Holders",
+    description:
+      "Private chat rooms for the top 10 holders of any Pump.fun token.",
+  },
+  icons: {
+    icon: "/logo.png",
+  },
 };
 
 export default function RootLayout({

@@ -1,5 +1,5 @@
 import { WebSocketServer, WebSocket } from 'ws';
-import type { IncomingMessage } from 'http';
+import type { IncomingMessage, Server } from 'http';
 import type { ChatMessage, Holder } from '../types/index.js';
 import { config } from '../utils/config.js';
 
@@ -10,12 +10,12 @@ const feedSubscribers = new Set<WebSocket>();
 // Track alive status for heartbeat
 const aliveClients = new WeakSet<WebSocket>();
 
-export function createWebSocketServer(port: number): WebSocketServer {
+export function createWebSocketServer(server: Server): WebSocketServer {
   const wss = new WebSocketServer({
-    port,
-    verifyClient: (info) => {
+    server,
+    verifyClient: (info: { origin: string; req: IncomingMessage }) => {
       const origin = info.origin || info.req.headers.origin;
-      if (!origin) return true; // Allow non-browser clients
+      if (!origin) return config.nodeEnv !== 'production';
       return config.corsOrigin === '*' || config.corsOrigin === origin;
     },
   });
@@ -24,7 +24,7 @@ export function createWebSocketServer(port: number): WebSocketServer {
     aliveClients.add(ws);
     ws.on('pong', () => aliveClients.add(ws));
 
-    const url = new URL(req.url || '', `ws://localhost:${port}`);
+    const url = new URL(req.url || '', 'ws://0.0.0.0');
     const pathParts = url.pathname.split('/').filter(Boolean);
 
     // Global feed: /feed
@@ -84,7 +84,7 @@ export function createWebSocketServer(port: number): WebSocketServer {
     });
   }, 30000);
 
-  console.log(`WebSocket server running on port ${port}`);
+  console.log('WebSocket server attached to HTTP server');
   return wss;
 }
 

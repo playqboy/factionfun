@@ -3,9 +3,10 @@ dotenv.config();
 
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import { createServer } from 'http';
 import { config } from './utils/config.js';
-import { pool, testConnection } from './utils/database.js';
-import { redisClient, connectRedis } from './utils/redis.js';
+import { pool, query, testConnection } from './utils/database.js';
 import { tokenRoutes } from './routes/token.js';
 import { chatRoutes } from './routes/chat.js';
 import { globalLimiter } from './middleware/rateLimit.js';
@@ -13,20 +14,26 @@ import { createWebSocketServer } from './websocket/handlers.js';
 import { startRankingJob } from './jobs/updateRankings.js';
 
 async function main() {
-  // Connect to databases
+  // Connect to database
   await testConnection();
-  await connectRedis();
 
   // Create Express app
   const app = express();
 
+  app.use(helmet());
   app.use(cors({ origin: config.corsOrigin }));
   app.use(express.json());
   app.use(globalLimiter);
 
-  // Health check
-  app.get('/health', (_req, res) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  // Health check — verifies DB connectivity
+  app.get('/health', async (_req, res) => {
+    try {
+      await query('SELECT 1');
+      res.json({ status: 'ok', timestamp: new Date().toISOString() });
+    } catch (err) {
+      console.error('Health check failed:', err);
+      res.status(503).json({ status: 'unhealthy', timestamp: new Date().toISOString() });
+    }
   });
 
   // Routes
@@ -44,25 +51,36 @@ async function main() {
     res.status(500).json({ error: 'Internal server error' });
   });
 
-  // Start HTTP server
-  const httpServer = app.listen(config.port, () => {
-    console.log(`HTTP server running on port ${config.port}`);
-  });
+  // Create HTTP server and attach WebSocket to the same server
+  const httpServer = createServer(app);
+  const wss = createWebSocketServer(httpServer);
 
-  // Start WebSocket server
-  const wss = createWebSocketServer(config.wsPort);
+  httpServer.listen(config.port, () => {
+    console.log(`Server running on port ${config.port} (HTTP + WebSocket)`);
+  });
 
   // Start background ranking job
   startRankingJob();
 
-  // Graceful shutdown
+  // Graceful shutdown with forced exit timeout
   const shutdown = async () => {
     console.log('\nShutting down...');
-    httpServer.close();
-    wss.close();
-    await redisClient.quit();
-    await pool.end();
-    console.log('Shutdown complete');
+
+    const forceExit = setTimeout(() => {
+      console.error('Forced shutdown after timeout');
+      process.exit(1);
+    }, 10000);
+
+    try {
+      httpServer.close();
+      wss.close();
+      await pool.end();
+      console.log('Shutdown complete');
+    } catch (err) {
+      console.error('Error during shutdown:', err);
+    }
+
+    clearTimeout(forceExit);
     process.exit(0);
   };
 
