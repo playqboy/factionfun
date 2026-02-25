@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "dev": "node --loader ts-node/esm src/index.ts",
+    "dev": "node --dns-result-order=ipv4first --loader ts-node/esm src/index.ts",
     "build": "tsc",
     "start": "node --dns-result-order=ipv4first dist/index.js",
     "db:migrate": "node --loader ts-node/esm src/db/migrate.ts",

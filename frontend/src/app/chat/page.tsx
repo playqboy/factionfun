@@ -30,6 +30,7 @@ export default function ChatPage() {
   const {
     authToken,
     isAuthenticated,
+    isAuthenticating,
     authenticate,
     logout,
     walletAddress,
@@ -344,11 +345,13 @@ export default function ChatPage() {
                 inputStatus={
                   !walletAddress
                     ? "connect"
-                    : !isAuthenticated
+                    : isAuthenticating
                       ? "authenticating"
-                      : !userStatus?.isInTop10
-                        ? "not-top10"
-                        : "ready"
+                      : !isAuthenticated
+                        ? "connect"
+                        : !userStatus?.isInTop10
+                          ? "not-top10"
+                          : "ready"
                 }
                 onConnect={authenticate}
               />

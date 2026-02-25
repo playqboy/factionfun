@@ -13,7 +13,7 @@ import {
   FaCrown,
 } from "react-icons/fa6";
 import { Button } from "@/components/ui/button";
-import { BeamsBackground } from "@/components/ui/beams-background";
+import LetterGlitch from "@/components/ui/letter-glitch";
 import FloatingHeader from "@/components/FloatingHeader";
 import {
   GlowingStarsBackgroundCard,
@@ -25,7 +25,17 @@ import LiveChatFeed from "@/components/LiveChatFeed";
 
 export default function LandingPage() {
   return (
-    <BeamsBackground className="min-h-screen" intensity="medium">
+    <div className="relative min-h-screen bg-background">
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-15">
+        <LetterGlitch
+          glitchColors={["#003344", "#00BFFF", "#0066FF"]}
+          glitchSpeed={50}
+          centerVignette={false}
+          outerVignette={true}
+          smooth={true}
+        />
+      </div>
+      <div className="relative z-10">
       <div className="px-6 pt-4">
         <FloatingHeader />
       </div>
@@ -297,6 +307,7 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
-    </BeamsBackground>
+    </div>
+    </div>
   );
 }

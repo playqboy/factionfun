@@ -1,6 +1,6 @@
 [build]
 builder = "nixpacks"
-buildCommand = "pnpm install && pnpm build"
+buildCommand = "pnpm install && pnpm --filter factionfun-backend build"
 
 [deploy]
 startCommand = "node --dns-result-order=ipv4first dist/index.js"
