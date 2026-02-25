@@ -1,0 +1,8 @@
+[build]
+builder = "nixpacks"
+buildCommand = "pnpm install && pnpm --filter frontend build && cp -r frontend/public frontend/.next/standalone/frontend/public && cp -r frontend/.next/static frontend/.next/standalone/frontend/.next/static"
+
+[deploy]
+startCommand = "HOSTNAME=0.0.0.0 node .next/standalone/frontend/server.js"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 5
