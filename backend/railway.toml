@@ -4,7 +4,7 @@ buildCommand = "pnpm install && pnpm --filter factionfun-backend build"
 
 [deploy]
 startCommand = "node dist/index.js"
-healthcheckPath = "/health"
+healthcheckPath = "/ping"
 healthcheckTimeout = 30
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 10

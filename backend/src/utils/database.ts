@@ -12,7 +12,15 @@ export const pool = new Pool({
 });
 
 pool.on('error', (err) => {
-  console.error('[DB] Pool error:', err.message);
+  console.error('[DB] Pool idle client error:', err.message);
+});
+
+pool.on('connect', () => {
+  console.log(`[DB] New client connected (total: ${pool.totalCount}, idle: ${pool.idleCount}, waiting: ${pool.waitingCount})`);
+});
+
+pool.on('remove', () => {
+  console.log(`[DB] Client removed (total: ${pool.totalCount}, idle: ${pool.idleCount})`);
 });
 
 export async function query(text: string, params?: unknown[]) {
@@ -23,9 +31,7 @@ export async function testConnection(): Promise<void> {
   const client = await pool.connect();
   try {
     await client.query('SELECT 1');
-    if (config.nodeEnv !== 'production') {
-      console.log('PostgreSQL connected');
-    }
+    console.log('[DB] Connection test passed');
   } finally {
     client.release();
   }
