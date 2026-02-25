@@ -20,6 +20,6 @@ export async function verifyPrivyToken(token: string): Promise<VerifyAccessToken
   return verifyAccessToken({
     access_token: token,
     app_id: config.privyAppId,
-    verification_key: config.privyVerificationKey ?? jwks,
+    verification_key: jwks,
   });
 }
