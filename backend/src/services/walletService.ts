@@ -71,23 +71,41 @@ async function fetchMarketCaps(mints: string[]): Promise<Map<string, number>> {
   return result;
 }
 
-interface DASItem {
+const TOKEN_PROGRAM_ID = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
+
+interface TokenAccountValue {
+  account: {
+    data: {
+      parsed: {
+        info: {
+          mint: string;
+          tokenAmount: {
+            amount: string;
+            decimals: number;
+            uiAmount: number | null;
+          };
+        };
+      };
+    };
+  };
+}
+
+interface GetTokenAccountsResponse {
+  result?: {
+    value?: TokenAccountValue[];
+  };
+}
+
+interface AssetInfo {
   id: string;
   content?: {
     metadata?: { name?: string; symbol?: string };
     links?: { image?: string };
   };
-  token_info?: {
-    balance?: number;
-    decimals?: number;
-  };
 }
 
-interface DASResponse {
-  result?: {
-    items?: DASItem[];
-    total?: number;
-  };
+interface GetAssetBatchResponse {
+  result?: AssetInfo[];
 }
 
 async function withConcurrencyLimit<T>(
@@ -121,52 +139,45 @@ export async function fetchWalletHoldings(
     }
   }
 
-  // Fetch all fungible tokens owned by the wallet via Helius DAS
+  // Step 1: Fetch all SPL token accounts via standard RPC (reads on-chain, no indexing needed)
   const response = await fetch(HELIUS_RPC, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       jsonrpc: '2.0',
-      id: 'search-assets',
-      method: 'searchAssets',
-      params: {
-        ownerAddress: walletAddress,
-        tokenType: 'fungible',
-        displayOptions: { showZeroBalance: false },
-      },
+      id: 'get-token-accounts',
+      method: 'getTokenAccountsByOwner',
+      params: [
+        walletAddress,
+        { programId: TOKEN_PROGRAM_ID },
+        { encoding: 'jsonParsed' },
+      ],
     }),
     signal: AbortSignal.timeout(15000),
   });
 
-  const data = (await response.json()) as DASResponse;
-  const items = data.result?.items ?? [];
-  const totalCount = data.result?.total ?? items.length;
+  const data = (await response.json()) as GetTokenAccountsResponse;
+  const accounts = data.result?.value ?? [];
 
   // Parse and filter to non-zero balances
   const parsed: {
     mint: string;
-    name: string;
-    symbol: string;
-    imageUri: string | null;
     balance: string;
     decimals: number;
     uiAmount: number;
   }[] = [];
 
-  for (const item of items) {
-    const rawBalance = item.token_info?.balance ?? 0;
-    if (rawBalance === 0) continue;
+  for (const acct of accounts) {
+    const info = acct.account.data.parsed.info;
+    const rawBalance = info.tokenAmount.amount;
+    if (rawBalance === '0') continue;
 
-    const decimals = item.token_info?.decimals ?? 0;
-    const uiAmount = rawBalance / Math.pow(10, decimals);
-    const mint = item.id;
+    const decimals = info.tokenAmount.decimals;
+    const uiAmount = info.tokenAmount.uiAmount ?? Number(rawBalance) / Math.pow(10, decimals);
 
     parsed.push({
-      mint,
-      name: item.content?.metadata?.name || mint.slice(0, 6) + '...',
-      symbol: item.content?.metadata?.symbol || '???',
-      imageUri: item.content?.links?.image || null,
-      balance: String(rawBalance),
+      mint: info.mint,
+      balance: rawBalance,
       decimals,
       uiAmount,
     });
@@ -176,13 +187,50 @@ export async function fetchWalletHoldings(
   parsed.sort((a, b) => b.uiAmount - a.uiAmount);
   const capped = parsed.slice(0, MAX_TOKENS);
 
-  // Enrich with rank data (concurrency-limited) and market caps (batched)
-  const holdings: WalletHolding[] = capped.map((t) => ({
-    ...t,
-    isTop10: false,
-    rank: null,
-    marketCap: null,
-  }));
+  // Step 2: Fetch metadata (name, symbol, image) via Helius getAssetBatch
+  const metadataMap = new Map<string, { name: string; symbol: string; imageUri: string | null }>();
+  if (capped.length > 0) {
+    try {
+      const assetRes = await fetch(HELIUS_RPC, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 'get-assets',
+          method: 'getAssetBatch',
+          params: { ids: capped.map((t) => t.mint) },
+        }),
+        signal: AbortSignal.timeout(15000),
+      });
+
+      const assetData = (await assetRes.json()) as GetAssetBatchResponse;
+      for (const asset of assetData.result ?? []) {
+        metadataMap.set(asset.id, {
+          name: asset.content?.metadata?.name || asset.id.slice(0, 6) + '...',
+          symbol: asset.content?.metadata?.symbol || '???',
+          imageUri: asset.content?.links?.image || null,
+        });
+      }
+    } catch {
+      // Metadata fetch failed — we'll fall back to truncated mints
+    }
+  }
+
+  const totalCount = accounts.length;
+
+  // Enrich with metadata + rank data (concurrency-limited) and market caps (batched)
+  const holdings: WalletHolding[] = capped.map((t) => {
+    const meta = metadataMap.get(t.mint);
+    return {
+      ...t,
+      name: meta?.name || t.mint.slice(0, 6) + '...',
+      symbol: meta?.symbol || '???',
+      imageUri: meta?.imageUri || null,
+      isTop10: false,
+      rank: null,
+      marketCap: null,
+    };
+  });
 
   // Fetch ranks and market caps in parallel
   const [, mcaps] = await Promise.all([
