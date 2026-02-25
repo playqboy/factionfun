@@ -17,7 +17,6 @@ import { startRankingJob } from './jobs/updateRankings.js';
 
 async function main() {
   console.log(`[BOOT] NODE_ENV=${config.nodeEnv} PORT=${config.port}`);
-  console.log(`[BOOT] Privy auth: ${config.privyVerificationKey ? 'static key' : 'JWKS (remote)'}`);
   console.log(`[BOOT] Testing database connection...`);
   await testConnection();
   console.log(`[BOOT] Database OK`);

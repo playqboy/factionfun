@@ -66,10 +66,7 @@ export async function requireAuth(
     next();
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : 'unknown error';
-    const errStack = err instanceof Error ? err.stack : '';
     console.error(`[AUTH] Token verification failed for ${req.path}: ${errMsg}`);
-    console.error(`[AUTH] Token preview: "${token.slice(0, 30)}..." (${token.length} chars)`);
-    console.error(`[AUTH] Error stack: ${errStack}`);
     res.status(401).json({ error: 'Invalid or expired access token' });
   }
 }

@@ -16,12 +16,7 @@ const jwks = createRemoteJWKSet(
   { cacheMaxAge: 60 * 60 * 1000, cooldownDuration: 10 * 60 * 1000 },
 );
 
-let firstCall = true;
 export async function verifyPrivyToken(token: string): Promise<VerifyAccessTokenResponse> {
-  if (firstCall) {
-    console.log(`[AUTH] verifyPrivyToken using: JWKS (typeof jwks = ${typeof jwks})`);
-    firstCall = false;
-  }
   return verifyAccessToken({
     access_token: token,
     app_id: config.privyAppId,
