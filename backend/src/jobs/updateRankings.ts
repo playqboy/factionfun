@@ -2,6 +2,7 @@ import { fetchTopHolders } from '../services/holderService.js';
 import { pool } from '../utils/database.js';
 import { cache } from '../utils/cache.js';
 import { getActiveTokenMints, broadcastRankingUpdate, broadcastMembershipEvent } from '../websocket/handlers.js';
+import { config } from '../utils/config.js';
 
 const UPDATE_INTERVAL = 30000; // 30 seconds
 
@@ -129,14 +130,13 @@ function hashStringToInt(str: string): number {
 }
 
 export function startRankingJob(): void {
-  if (process.env.NODE_ENV !== 'production') {
+  if (config.nodeEnv !== 'production') {
     console.log(`Ranking update job started (every ${UPDATE_INTERVAL / 1000}s)`);
   }
 
-  setInterval(async () => {
+  setInterval(() => {
     const activeTokens = getActiveTokenMints();
     if (activeTokens.length === 0) return;
-
-    await Promise.allSettled(activeTokens.map(updateRankingsForToken));
+    Promise.allSettled(activeTokens.map(updateRankingsForToken)).catch(() => {});
   }, UPDATE_INTERVAL);
 }

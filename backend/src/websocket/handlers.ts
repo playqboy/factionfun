@@ -4,6 +4,8 @@ import type { ChatMessage, Holder } from '../types/index.js';
 import { config } from '../utils/config.js';
 import { isValidSolanaAddress } from '../utils/validation.js';
 
+const MAX_CONNECTIONS = 1000;
+
 // Map of tokenMint -> Set<WebSocket>
 const rooms = new Map<string, Set<WebSocket>>();
 // Global feed subscribers (homepage live feed)
@@ -15,16 +17,23 @@ export function createWebSocketServer(server: Server): WebSocketServer {
   const wss = new WebSocketServer({
     server,
     verifyClient: (info: { origin: string; req: IncomingMessage }) => {
-      const origin = info.origin || info.req.headers.origin;
+      const origin = (info.origin || info.req.headers.origin || '').replace(/\/+$/, '');
       if (!origin) return false; // Always require origin
+      const allowed = config.corsOrigin.split(',').map(s => s.trim().replace(/\/+$/, ''));
       if (config.nodeEnv !== 'production') {
-        return origin === 'http://localhost:3000' || origin === config.corsOrigin;
+        return allowed.includes(origin) || origin === 'http://localhost:3000';
       }
-      return config.corsOrigin === origin;
+      return allowed.includes(origin);
     },
+    maxPayload: 4096,
   });
 
   wss.on('connection', (ws: WebSocket, req: IncomingMessage) => {
+    if (wss.clients.size > MAX_CONNECTIONS) {
+      ws.close(1013, 'Server too busy');
+      return;
+    }
+
     aliveClients.add(ws);
     ws.on('pong', () => aliveClients.add(ws));
 
