@@ -41,6 +41,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
             accentColor: "#00BFFF",
             showWalletLoginFirst: true,
             walletChainType: "solana-only",
+            walletList: [
+              "phantom",
+              "solflare",
+              "backpack",
+              "metamask",
+              "detected_solana_wallets",
+            ],
           },
           externalWallets: {
             solana: {
