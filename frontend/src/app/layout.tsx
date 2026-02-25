@@ -24,15 +24,19 @@ export const metadata: Metadata = {
     url: "https://factions.fun",
     siteName: "Factions.fun",
     type: "website",
+    images: [{ url: "/logo.png", width: 512, height: 512, alt: "Factions.fun" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Factions.fun — On-Chain Group Chat for Top Holders",
     description:
       "Private chat rooms for the top 10 holders of any Pump.fun token.",
+    images: ["/logo.png"],
   },
   icons: {
-    icon: "/logo.png",
+    icon: [{ url: "/logo.png", type: "image/png" }],
+    shortcut: "/logo.png",
+    apple: "/logo.png",
   },
 };
 

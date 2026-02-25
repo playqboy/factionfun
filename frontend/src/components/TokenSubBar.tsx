@@ -99,6 +99,8 @@ export default memo(function TokenSubBar({
       {/* Tab icons */}
       <div className="flex items-center gap-0.5 px-2 flex-shrink-0">
         <button
+          type="button"
+          aria-label="Favorites"
           onClick={() => setActiveTab("favorites")}
           className={`w-7 h-7 flex items-center justify-center rounded-sm transition-colors cursor-pointer ${
             activeTab === "favorites"
@@ -109,6 +111,8 @@ export default memo(function TokenSubBar({
           <FaStar className="w-3.5 h-3.5" />
         </button>
         <button
+          type="button"
+          aria-label="Holdings"
           onClick={() => setActiveTab("holdings")}
           className={`w-7 h-7 flex items-center justify-center rounded-sm transition-colors cursor-pointer ${
             activeTab === "holdings"

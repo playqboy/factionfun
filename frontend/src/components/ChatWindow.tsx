@@ -28,6 +28,7 @@ interface ChatWindowProps {
   currentWallet: string;
   holders?: HolderResponse[];
   isLoading?: boolean;
+  loadError?: boolean;
   canSend?: boolean;
   inputStatus?: "connect" | "not-top10" | "authenticating" | "ready";
   isFavorited?: boolean;
@@ -131,6 +132,7 @@ export default memo(function ChatWindow({
   currentWallet,
   holders = [],
   isLoading,
+  loadError,
   canSend = true,
   inputStatus = "ready",
   isFavorited,
@@ -259,6 +261,7 @@ export default memo(function ChatWindow({
           <button
             type="button"
             onClick={onToggleFavorite}
+            aria-label={isFavorited ? "Remove from favorites" : "Add to favorites"}
             className="p-1.5 rounded-sm transition-colors cursor-pointer hover:bg-bg-subtle-hover"
           >
             <FaStar
@@ -291,12 +294,25 @@ export default memo(function ChatWindow({
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-sm icon-box mb-4 mx-auto">
                   <FaMessage className="w-5 h-5 text-primary/60" />
                 </div>
-                <p className="text-sm font-medium text-foreground/70 mb-1">
-                  No messages yet
-                </p>
-                <p className="text-xs text-muted-foreground/60">
-                  Be the first to speak in this faction
-                </p>
+                {loadError ? (
+                  <>
+                    <p className="text-sm font-medium text-error/70 mb-1">
+                      Failed to load messages
+                    </p>
+                    <p className="text-xs text-muted-foreground/60">
+                      Check your connection and try again
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm font-medium text-foreground/70 mb-1">
+                      No messages yet
+                    </p>
+                    <p className="text-xs text-muted-foreground/60">
+                      Be the first to speak in this faction
+                    </p>
+                  </>
+                )}
               </div>
             </div>
           ) : (
@@ -352,6 +368,7 @@ export default memo(function ChatWindow({
             type="submit"
             disabled={!canSend || !input.trim() || sending}
             size="icon"
+            aria-label="Send message"
             className="w-10 h-10 btn-gradient flex-shrink-0"
           >
             {sending ? (

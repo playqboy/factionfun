@@ -25,6 +25,7 @@ import { useChat } from "@/hooks/useChat";
 import TokenSelector from "@/components/TokenSelector";
 import Leaderboard from "@/components/Leaderboard";
 import ChatWindow from "@/components/ChatWindow";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import TokenSubBar from "@/components/TokenSubBar";
 import { useWalletHoldings } from "@/hooks/useWalletHoldings";
 import { useFavorites } from "@/hooks/useFavorites";
@@ -49,6 +50,7 @@ export default function ChatPage() {
   const {
     messages,
     loading: chatLoading,
+    loadError: chatLoadError,
     sendMessage,
   } = useChat(tokenMint, authToken);
 
@@ -113,6 +115,13 @@ export default function ChatPage() {
     }, 12);
     return () => clearInterval(activeTimerRef.current);
   }, [targetText]);
+
+  useEffect(() => {
+    if (sidebarOpen) {
+      document.body.style.overflow = 'hidden';
+      return () => { document.body.style.overflow = ''; };
+    }
+  }, [sidebarOpen]);
 
   return (
     <div className="h-screen flex bg-background">
@@ -180,6 +189,7 @@ export default function ChatPage() {
             <Button
               variant="ghost"
               size="icon-sm"
+              aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
               className="md:hidden text-muted-foreground hover:text-foreground"
               onClick={() => setSidebarOpen(!sidebarOpen)}
             >
@@ -261,6 +271,7 @@ export default function ChatPage() {
                   onClick={logout}
                   variant="ghost"
                   size="icon-sm"
+                  aria-label="Logout"
                   className="text-muted-foreground hover:text-foreground"
                 >
                   <FaRightFromBracket className="w-3.5 h-3.5" />
@@ -403,39 +414,42 @@ export default function ChatPage() {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3 }}
             >
-              <ChatWindow
-                messages={messages}
-                onSend={sendMessage}
-                currentWallet={walletAddress || ""}
-                holders={holders || []}
-                isLoading={chatLoading}
-                canSend={
-                  !!walletAddress &&
-                  isAuthenticated &&
-                  (userStatus?.isInTop10 || false)
-                }
-                inputStatus={
-                  !walletAddress
-                    ? "connect"
-                    : isAuthenticating
-                      ? "authenticating"
-                      : !isAuthenticated
-                        ? "connect"
-                        : !userStatus?.isInTop10
-                          ? "not-top10"
-                          : "ready"
-                }
-                isFavorited={tokenMint ? isFavorited(tokenMint) : false}
-                onToggleFavorite={
-                  tokenMint && isAuthenticated
-                    ? () =>
-                        toggleFavorite(tokenMint, {
-                          name: tokenInfo?.name,
-                          symbol: tokenInfo?.symbol,
-                        })
-                    : undefined
-                }
-              />
+              <ErrorBoundary>
+                <ChatWindow
+                  messages={messages}
+                  onSend={sendMessage}
+                  currentWallet={walletAddress || ""}
+                  holders={holders || []}
+                  isLoading={chatLoading}
+                  loadError={chatLoadError}
+                  canSend={
+                    !!walletAddress &&
+                    isAuthenticated &&
+                    (userStatus?.isInTop10 || false)
+                  }
+                  inputStatus={
+                    !walletAddress
+                      ? "connect"
+                      : isAuthenticating
+                        ? "authenticating"
+                        : !isAuthenticated
+                          ? "connect"
+                          : !userStatus?.isInTop10
+                            ? "not-top10"
+                            : "ready"
+                  }
+                  isFavorited={tokenMint ? isFavorited(tokenMint) : false}
+                  onToggleFavorite={
+                    tokenMint && isAuthenticated
+                      ? () =>
+                          toggleFavorite(tokenMint, {
+                            name: tokenInfo?.name,
+                            symbol: tokenInfo?.symbol,
+                          })
+                      : undefined
+                  }
+                />
+              </ErrorBoundary>
             </motion.div>
           )}
         </div>
