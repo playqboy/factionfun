@@ -34,13 +34,13 @@ export default memo(function TokenSelector({
 
   return (
     <div>
-      <p className="text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-widest mb-2.5">
+      <p className="text-[7px] font-semibold text-muted-foreground/70 uppercase tracking-widest mb-2.5">
         Token
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-2">
         <div className="relative">
-          <FaMagnifyingGlass className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50 pointer-events-none" />
+          <FaMagnifyingGlass className="absolute left-2.5 top-1/2 -translate-y-1/2 w-2.5 h-2.5 text-muted-foreground/50 pointer-events-none" />
           <Input
             type="text"
             value={input}
@@ -48,13 +48,13 @@ export default memo(function TokenSelector({
               setInput(e.target.value);
               setError("");
             }}
-            placeholder="Paste token mint..."
-            className="pl-8 h-9 text-xs bg-bg-subtle-hover border-border/30 focus-visible:ring-primary/30 focus-visible:border-primary/40 placeholder:text-muted-foreground/40"
+            placeholder="Paste Contract Address"
+            className="pl-7 h-9 text-[7px] bg-[#0a0a0f] dark:bg-[#0a0a0f] border-border-subtle focus-visible:ring-primary/30 focus-visible:border-primary/40 placeholder:text-muted-foreground/40"
           />
         </div>
 
         {error && (
-          <p className="text-destructive text-[11px] pl-1">{error}</p>
+          <p className="text-destructive text-[8px] pl-1">{error}</p>
         )}
 
         <Button
@@ -66,7 +66,7 @@ export default memo(function TokenSelector({
       </form>
 
       {currentMint && (
-        <p className="mt-2 text-[10px] text-muted-foreground/50 font-mono truncate">
+        <p className="mt-2 text-[7px] text-muted-foreground/50 font-mono truncate">
           {currentMint}
         </p>
       )}

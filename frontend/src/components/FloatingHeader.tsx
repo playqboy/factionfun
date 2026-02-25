@@ -1,21 +1,11 @@
 "use client";
 
-import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { FaBars } from "react-icons/fa6";
-import { Sheet, SheetContent, SheetFooter, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const links = [
-  { label: "How It Works", href: "#how-it-works" },
-  { label: "Features", href: "#features" },
-];
-
 export default function FloatingHeader() {
-  const [open, setOpen] = React.useState(false);
-
   return (
     <header
       className={cn(
@@ -35,66 +25,13 @@ export default function FloatingHeader() {
           </p>
         </Link>
 
-        <div className="hidden items-center gap-1 lg:flex">
-          {links.map((link) => (
-            <a
-              key={link.label}
-              className={buttonVariants({ variant: "ghost", size: "sm" })}
-              href={link.href}
-            >
-              {link.label}
-            </a>
-          ))}
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button
-            asChild
-            size="sm"
-            className="btn-gradient rounded-sm"
-          >
-            <Link href="/chat">Launch App</Link>
-          </Button>
-
-          <Sheet open={open} onOpenChange={setOpen}>
-            <Button
-              size="icon"
-              variant="outline"
-              onClick={() => setOpen(!open)}
-              className="lg:hidden"
-            >
-              <FaBars className="size-4" />
-            </Button>
-            <SheetContent
-              className="bg-background/95 supports-[backdrop-filter]:bg-background/80 gap-0 backdrop-blur-lg border-border-subtle"
-              showCloseButton={false}
-              side="left"
-            >
-              <SheetTitle className="sr-only">Navigation</SheetTitle>
-              <SheetDescription className="sr-only">Site navigation links</SheetDescription>
-              <div className="grid gap-y-2 overflow-y-auto px-4 pt-12 pb-5">
-                {links.map((link) => (
-                  <a
-                    key={link.label}
-                    className={buttonVariants({
-                      variant: "ghost",
-                      className: "justify-start",
-                    })}
-                    href={link.href}
-                    onClick={() => setOpen(false)}
-                  >
-                    {link.label}
-                  </a>
-                ))}
-              </div>
-              <SheetFooter>
-                <Button asChild variant="outline">
-                  <Link href="/chat">Launch App</Link>
-                </Button>
-              </SheetFooter>
-            </SheetContent>
-          </Sheet>
-        </div>
+        <Button
+          asChild
+          size="sm"
+          className="btn-gradient rounded-sm"
+        >
+          <Link href="/chat">Launch App</Link>
+        </Button>
       </nav>
     </header>
   );
