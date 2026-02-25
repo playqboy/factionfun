@@ -81,6 +81,9 @@ function useAuthWithPrivy() {
 const noop = () => {};
 
 function useAuthStub() {
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+    console.warn('Privy auth is disabled: NEXT_PUBLIC_PRIVY_APP_ID is not set');
+  }
   return {
     authToken: null,
     isAuthenticated: false,

@@ -1,4 +1,4 @@
-const WS_BASE = process.env.NEXT_PUBLIC_WS_URL || (
+const WS_BASE = (process.env.NEXT_PUBLIC_WS_URL?.trim().replace(/\/+$/, "")) || (
   typeof window !== "undefined" && window.location.hostname !== "localhost"
     ? (() => { throw new Error("NEXT_PUBLIC_WS_URL must be set in production"); })()
     : "ws://localhost:3001"

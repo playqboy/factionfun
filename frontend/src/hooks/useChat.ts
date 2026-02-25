@@ -11,23 +11,26 @@ import { createChatSocket, type WSEvent } from "@/lib/websocket";
 export function useChat(tokenMint: string | null, authToken: string | null) {
   const [messages, setMessages] = useState<ChatMessageResponse[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const socketRef = useRef<{ close: () => void } | null>(null);
 
   // Load initial messages
   useEffect(() => {
     if (!tokenMint) {
       setMessages([]);
+      setLoadError(false);
       return;
     }
 
     const controller = new AbortController();
     setLoading(true);
+    setLoadError(false);
     fetchMessages(tokenMint)
       .then((msgs) => {
         if (!controller.signal.aborted) setMessages(msgs);
       })
       .catch(() => {
-        // Failed to load messages — UI will show empty state
+        if (!controller.signal.aborted) setLoadError(true);
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
@@ -71,5 +74,5 @@ export function useChat(tokenMint: string | null, authToken: string | null) {
     [tokenMint, authToken]
   );
 
-  return { messages, loading, sendMessage };
+  return { messages, loading, loadError, sendMessage };
 }

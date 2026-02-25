@@ -1,11 +1,22 @@
 const API_BASE = (() => {
-  const url = process.env.NEXT_PUBLIC_API_URL;
-  if (url) return url.endsWith("/api") ? url : `${url}/api`;
+  const raw = process.env.NEXT_PUBLIC_API_URL?.trim();
+  if (raw) {
+    const url = raw.replace(/\/+$/, "");
+    return url.endsWith("/api") ? url : `${url}/api`;
+  }
   if (typeof window !== "undefined" && window.location.hostname !== "localhost") {
     throw new Error("NEXT_PUBLIC_API_URL must be set in production");
   }
   return "http://localhost:3001/api";
 })();
+
+const FETCH_TIMEOUT = 15_000;
+
+function fetchWithTimeout(url: string, options?: RequestInit): Promise<Response> {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
+  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(id));
+}
 
 export interface HolderResponse {
   walletAddress: string;
@@ -70,7 +81,7 @@ export interface WalletHoldingsResponse {
 export async function fetchWalletHoldings(
   wallet: string
 ): Promise<WalletHoldingsResponse> {
-  const res = await fetch(`${API_BASE}/wallet/${wallet}/holdings`);
+  const res = await fetchWithTimeout(`${API_BASE}/wallet/${wallet}/holdings`);
   if (!res.ok) throw new Error("Failed to fetch wallet holdings");
   return res.json();
 }
@@ -88,7 +99,7 @@ export interface FavoriteResponse {
 export async function fetchFavorites(
   authToken: string
 ): Promise<FavoriteResponse[]> {
-  const res = await fetch(`${API_BASE}/favorites`, {
+  const res = await fetchWithTimeout(`${API_BASE}/favorites`, {
     headers: { Authorization: `Bearer ${authToken}` },
   });
   if (!res.ok) throw new Error("Failed to fetch favorites");
@@ -100,7 +111,7 @@ export async function addFavorite(
   authToken: string,
   metadata?: { name?: string; symbol?: string; imageUri?: string }
 ): Promise<FavoriteResponse> {
-  const res = await fetch(`${API_BASE}/favorites`, {
+  const res = await fetchWithTimeout(`${API_BASE}/favorites`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -121,7 +132,7 @@ export async function removeFavorite(
   tokenMint: string,
   authToken: string
 ): Promise<void> {
-  const res = await fetch(`${API_BASE}/favorites/${tokenMint}`, {
+  const res = await fetchWithTimeout(`${API_BASE}/favorites/${tokenMint}`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${authToken}` },
   });
@@ -131,7 +142,7 @@ export async function removeFavorite(
 export async function fetchTopHolders(
   mint: string
 ): Promise<HolderResponse[]> {
-  const res = await fetch(`${API_BASE}/token/${mint}/top-holders`);
+  const res = await fetchWithTimeout(`${API_BASE}/token/${mint}/top-holders`);
   if (!res.ok) throw new Error("Failed to fetch holders");
   return res.json();
 }
@@ -140,7 +151,7 @@ export async function fetchUserStatus(
   mint: string,
   wallet: string
 ): Promise<UserStatusResponse> {
-  const res = await fetch(`${API_BASE}/token/${mint}/user/${wallet}`);
+  const res = await fetchWithTimeout(`${API_BASE}/token/${mint}/user/${wallet}`);
   if (!res.ok) throw new Error("Failed to fetch user status");
   return res.json();
 }
@@ -148,13 +159,13 @@ export async function fetchUserStatus(
 export async function fetchTokenInfo(
   mint: string
 ): Promise<TokenInfoResponse> {
-  const res = await fetch(`${API_BASE}/token/${mint}/info`);
+  const res = await fetchWithTimeout(`${API_BASE}/token/${mint}/info`);
   if (!res.ok) throw new Error("Failed to fetch token info");
   return res.json();
 }
 
 export async function fetchRecentMessages(): Promise<FeedMessageResponse[]> {
-  const res = await fetch(`${API_BASE}/chat/recent`);
+  const res = await fetchWithTimeout(`${API_BASE}/chat/recent`);
   if (!res.ok) throw new Error("Failed to fetch recent messages");
   return res.json();
 }
@@ -164,7 +175,7 @@ export async function fetchMessages(
   limit = 50,
   offset = 0
 ): Promise<ChatMessageResponse[]> {
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `${API_BASE}/chat/${mint}/messages?limit=${limit}&offset=${offset}`
   );
   if (!res.ok) throw new Error("Failed to fetch messages");
@@ -176,7 +187,7 @@ export async function sendMessage(
   content: string,
   authToken: string
 ): Promise<{ messageId: number; status: string }> {
-  const res = await fetch(`${API_BASE}/chat/message`, {
+  const res = await fetchWithTimeout(`${API_BASE}/chat/message`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
