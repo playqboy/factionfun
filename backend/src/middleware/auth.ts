@@ -65,7 +65,8 @@ export async function requireAuth(
 
     next();
   } catch (err) {
-    console.error('Auth token verification failed:', err instanceof Error ? err.message : 'unknown error');
+    const errMsg = err instanceof Error ? err.message : 'unknown error';
+    console.error(`[AUTH] Token verification failed for ${req.path}: ${errMsg}`);
     res.status(401).json({ error: 'Invalid or expired access token' });
   }
 }

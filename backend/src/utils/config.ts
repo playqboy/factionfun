@@ -36,5 +36,5 @@ export const config: Config = {
   rateLimitMaxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100', 10),
   privyAppId: requireEnv('PRIVY_APP_ID'),
   privyAppSecret: requireEnv('PRIVY_APP_SECRET'),
-  privyVerificationKey: requireEnv('PRIVY_VERIFICATION_KEY'),
+  privyVerificationKey: requireEnv('PRIVY_VERIFICATION_KEY').replace(/\\n/g, '\n'),
 };
