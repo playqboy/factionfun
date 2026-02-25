@@ -114,9 +114,13 @@ export async function fetchTokenInfo(tokenMint: string): Promise<TokenInfo> {
   const cacheKey = `tokeninfo:${tokenMint}`;
   const cached = cache.get(cacheKey);
   if (cached) {
-    const parsed = JSON.parse(cached);
-    parsed.totalSupply = BigInt(parsed.totalSupply);
-    return parsed;
+    try {
+      const parsed = JSON.parse(cached);
+      parsed.totalSupply = BigInt(parsed.totalSupply);
+      return parsed;
+    } catch {
+      cache.del(cacheKey);
+    }
   }
 
   const mintPubkey = new PublicKey(tokenMint);

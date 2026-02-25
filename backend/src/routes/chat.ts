@@ -27,8 +27,10 @@ chatRoutes.get('/:mint/messages', publicApiLimiter, async (req, res) => {
     return;
   }
 
-  const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
-  const offset = Math.min(Math.max(parseInt(req.query.offset as string) || 0, 0), 10000);
+  const parsedLimit = parseInt(req.query.limit as string);
+  const limit = Math.min(Number.isFinite(parsedLimit) ? parsedLimit : 50, 100);
+  const parsedOffset = parseInt(req.query.offset as string);
+  const offset = Math.min(Math.max(Number.isFinite(parsedOffset) ? parsedOffset : 0, 0), 5000);
 
   try {
     const messages = await getMessages(mint, limit, offset);

@@ -114,7 +114,11 @@ export async function fetchWalletHoldings(
   const cacheKey = `wallet-holdings:${walletAddress}`;
   const cached = cache.get(cacheKey);
   if (cached) {
-    return JSON.parse(cached);
+    try {
+      return JSON.parse(cached);
+    } catch {
+      cache.del(cacheKey);
+    }
   }
 
   // Fetch all fungible tokens owned by the wallet via Helius DAS

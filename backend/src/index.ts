@@ -20,6 +20,7 @@ async function main() {
 
   // Create Express app
   const app = express();
+  app.set('trust proxy', 1);
 
   app.use(helmet({
     contentSecurityPolicy: config.nodeEnv === 'production' ? {
@@ -28,11 +29,14 @@ async function main() {
         connectSrc: ["'self'", 'https:', 'wss:'],
         scriptSrc: ["'self'"],
         styleSrc: ["'self'", "'unsafe-inline'"],
+        frameAncestors: ["'none'"],
       },
     } : false,
   }));
   app.use(cors({
-    origin: config.nodeEnv === 'production' ? config.corsOrigin : true,
+    origin: config.nodeEnv === 'production'
+      ? config.corsOrigin.split(',').map(s => s.trim())
+      : true,
   }));
   app.use(express.json({ limit: '16kb' }));
   app.use(globalLimiter);
@@ -60,9 +64,7 @@ async function main() {
 
   // Global error handler
   app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-    if (config.nodeEnv !== 'production') {
-      console.error('Unhandled error:', err);
-    }
+    console.error('Unhandled error:', err.message);
     res.status(500).json({ error: 'Internal server error' });
   });
 
@@ -84,7 +86,7 @@ async function main() {
     }, 10000);
 
     try {
-      httpServer.close();
+      await new Promise<void>((resolve) => httpServer.close(() => resolve()));
       wss.close();
       await pool.end();
     } catch {

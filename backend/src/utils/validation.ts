@@ -11,7 +11,9 @@ export function isValidSolanaAddress(address: string): boolean {
 
 export function sanitizeMessageContent(content: string): string {
   return content
-    .replace(/<[^>]*>/g, '')
+    .replace(/<[^>]*>?/g, '')
+    .replace(/javascript\s*:/gi, '')
+    .replace(/on\w+\s*=/gi, '')
     .trim()
     .slice(0, 500);
 }
