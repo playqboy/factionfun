@@ -137,6 +137,7 @@ const CardSwap: React.FC<CardSwapProps> = ({
             x: slot.x,
             y: slot.y,
             z: slot.z,
+            skewY: skewAmount,
             duration: config.durMove,
             ease: config.ease
           },
@@ -159,6 +160,7 @@ const CardSwap: React.FC<CardSwapProps> = ({
           x: backSlot.x,
           y: backSlot.y,
           z: backSlot.z,
+          skewY: skewAmount,
           duration: config.durReturn,
           ease: config.ease
         },
