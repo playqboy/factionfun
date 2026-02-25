@@ -42,11 +42,14 @@
   --bg-secondary: #0c0c14;
   --bg-card: #0e0e18;
   --bg-card-hover: #141425;
+  --bg-subtle: rgba(255, 255, 255, 0.03);
+  --bg-subtle-hover: rgba(255, 255, 255, 0.04);
   --foreground-muted: #64748b;
   --foreground-subtle: #475569;
   --accent-deep: #0066FF;
   --accent-glow: rgba(0, 191, 255, 0.12);
   --border-light: #252540;
+  --border-subtle: rgba(255, 255, 255, 0.06);
   --success: #22c55e;
   --error: #ef4444;
   --warning: #f59e0b;
@@ -93,6 +96,9 @@
   --color-accent-deep: var(--accent-deep);
   --color-accent-glow: var(--accent-glow);
   --color-border-light: var(--border-light);
+  --color-border-subtle: var(--border-subtle);
+  --color-bg-subtle: var(--bg-subtle);
+  --color-bg-subtle-hover: var(--bg-subtle-hover);
   --color-success: var(--success);
   --color-error: var(--error);
   --color-warning: var(--warning);
@@ -115,20 +121,36 @@ body {
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #00BFFF; }
+::-webkit-scrollbar-thumb:hover { background: var(--primary); }
 
 /* Utilities */
 .glow-accent {
-  box-shadow: 0 0 20px rgba(0, 191, 255, 0.1), 0 0 60px rgba(0, 102, 255, 0.05);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--primary) 10%, transparent), 0 0 60px color-mix(in srgb, var(--accent-deep) 5%, transparent);
 }
 .glow-accent-strong {
-  box-shadow: 0 0 30px rgba(0, 191, 255, 0.2), 0 0 80px rgba(0, 102, 255, 0.1);
+  box-shadow: 0 0 30px color-mix(in srgb, var(--primary) 20%, transparent), 0 0 80px color-mix(in srgb, var(--accent-deep) 10%, transparent);
 }
 .text-gradient {
-  background: linear-gradient(135deg, #00BFFF, #0066FF);
+  background: linear-gradient(135deg, var(--primary), var(--accent-deep));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+.btn-gradient {
+  background: linear-gradient(to right, var(--primary), var(--accent-deep));
+  color: white;
+  border: 0;
+}
+.btn-gradient:hover {
+  opacity: 0.9;
+}
+.icon-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.125rem;
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary) 15%, transparent);
 }
 
 @keyframes fadeIn {

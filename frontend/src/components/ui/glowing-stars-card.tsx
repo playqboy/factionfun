@@ -18,7 +18,7 @@ export const GlowingStarsBackgroundCard = ({
       onMouseEnter={() => setMouseEnter(true)}
       onMouseLeave={() => setMouseEnter(false)}
       className={cn(
-        "bg-[linear-gradient(110deg,#0e0e18_0.6%,#0a0a14)] p-4 h-full w-full rounded-xl border border-border/50 hover:border-border-light transition-colors",
+        "bg-[linear-gradient(110deg,var(--card)_0.6%,var(--background))] p-4 h-full w-full rounded-xl border border-border/50 hover:border-border-light transition-colors",
         className
       )}
     >
@@ -116,14 +116,14 @@ const Star = ({ isGlowing, delay }: { isGlowing: boolean; delay: number }) => {
       initial={{ scale: 1 }}
       animate={{
         scale: isGlowing ? [1, 1.2, 2.5, 2.2, 1.5] : 1,
-        background: isGlowing ? "#00BFFF" : "#333",
+        background: isGlowing ? "var(--primary)" : "var(--border)",
       }}
       transition={{
         duration: 2,
         ease: "easeInOut",
         delay: delay,
       }}
-      className="bg-[#333] h-[1px] w-[1px] rounded-full relative z-20"
+      className="bg-border h-[1px] w-[1px] rounded-full relative z-20"
     />
   );
 };
@@ -141,7 +141,7 @@ const Glow = ({ delay }: { delay: number }) => {
         delay: delay,
       }}
       exit={{ opacity: 0 }}
-      className="absolute left-1/2 -translate-x-1/2 z-10 h-[4px] w-[4px] rounded-full bg-[#00BFFF] blur-[1px] shadow-2xl shadow-[#0066FF]"
+      className="absolute left-1/2 -translate-x-1/2 z-10 h-[4px] w-[4px] rounded-full bg-primary blur-[1px] shadow-2xl shadow-accent-deep"
     />
   );
 };

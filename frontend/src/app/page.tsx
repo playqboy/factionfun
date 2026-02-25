@@ -14,6 +14,7 @@ import {
 } from "react-icons/fa6";
 import { Button } from "@/components/ui/button";
 import LetterGlitch from "@/components/ui/letter-glitch";
+import ShinyText from "@/components/ui/shiny-text";
 import FloatingHeader from "@/components/FloatingHeader";
 import {
   GlowingStarsBackgroundCard,
@@ -54,8 +55,23 @@ export default function LandingPage() {
               transition={{ delay: 0.3, duration: 0.6 }}
               className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.08] mb-5"
             >
-              The chat room for{" "}
-              <span className="text-gradient">top holders</span>
+              <ShinyText
+                text="The chat room for"
+                color="#c0c8d8"
+                shineColor="#00BFFF"
+                speed={3}
+                yoyo={true}
+                delay={0.5}
+              />{" "}
+              <ShinyText
+                text="top holders"
+                color="#00BFFF"
+                shineColor="#e8eef8"
+                speed={3}
+                yoyo={true}
+                delay={0.5}
+                spread={90}
+              />
             </motion.h1>
 
             <TypingText
@@ -75,7 +91,7 @@ export default function LandingPage() {
               transition={{ delay: 0.6, duration: 0.5 }}
               className="flex flex-col sm:flex-row items-center justify-center gap-3"
             >
-              <Button asChild size="lg" className="bg-gradient-to-r from-[#00BFFF] to-[#0066FF] text-white border-0 hover:opacity-90 rounded-sm px-8 h-12 text-base font-bold glow-accent-strong">
+              <Button asChild size="lg" className="btn-gradient rounded-sm px-8 h-12 text-base font-bold glow-accent-strong">
                 <Link href="/chat">
                   Launch App
                 </Link>
@@ -104,7 +120,7 @@ export default function LandingPage() {
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.5 }}
           >
-            <p className="text-[#00BFFF] text-xs font-semibold uppercase tracking-widest mb-3">
+            <p className="text-primary text-xs font-semibold uppercase tracking-widest mb-3">
               How it works
             </p>
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
@@ -142,8 +158,8 @@ export default function LandingPage() {
               >
                 <GlowingStarsBackgroundCard>
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="flex items-center justify-center w-9 h-9 rounded-sm bg-[#00BFFF]/8 border border-[#00BFFF]/15">
-                      <item.icon className="w-4 h-4 text-[#00BFFF]" />
+                    <div className="flex items-center justify-center w-9 h-9 rounded-sm icon-box">
+                      <item.icon className="w-4 h-4 text-primary" />
                     </div>
                     <span className="text-[11px] font-mono text-muted-foreground">
                       Step {item.step}
@@ -168,7 +184,7 @@ export default function LandingPage() {
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.5 }}
           >
-            <p className="text-[#00BFFF] text-xs font-semibold uppercase tracking-widest mb-3">
+            <p className="text-primary text-xs font-semibold uppercase tracking-widest mb-3">
               Why Factions
             </p>
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
@@ -208,8 +224,8 @@ export default function LandingPage() {
               >
                 <GlowingStarsBackgroundCard>
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-sm bg-[#00BFFF]/8 border border-[#00BFFF]/15">
-                      <feature.icon className="w-4 h-4 text-[#00BFFF]" />
+                    <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-sm icon-box">
+                      <feature.icon className="w-4 h-4 text-primary" />
                     </div>
                   </div>
                   <GlowingStarsTitle className="mb-1">{feature.title}</GlowingStarsTitle>
