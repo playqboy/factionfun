@@ -19,7 +19,12 @@ export function createWebSocketServer(server: Server): WebSocketServer {
     verifyClient: (info: { origin: string; req: IncomingMessage }) => {
       const origin = (info.origin || info.req.headers.origin || '').replace(/\/+$/, '');
       if (!origin) return false; // Always require origin
-      const allowed = config.corsOrigin.split(',').map(s => s.trim().replace(/\/+$/, ''));
+      const allowed = config.corsOrigin.split(',').flatMap(s => {
+        const o = s.trim().replace(/\/+$/, '');
+        return o.includes('://www.')
+          ? [o, o.replace('://www.', '://')]
+          : [o, o.replace('://', '://www.')];
+      });
       if (config.nodeEnv !== 'production') {
         return allowed.includes(origin) || origin === 'http://localhost:3000';
       }

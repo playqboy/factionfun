@@ -35,7 +35,12 @@ async function main() {
   }));
   app.use(cors({
     origin: config.nodeEnv === 'production'
-      ? config.corsOrigin.split(',').map(s => s.trim())
+      ? config.corsOrigin.split(',').flatMap(s => {
+          const o = s.trim();
+          return o.includes('://www.')
+            ? [o, o.replace('://www.', '://')]
+            : [o, o.replace('://', '://www.')];
+        })
       : true,
   }));
   app.use(express.json({ limit: '16kb' }));
