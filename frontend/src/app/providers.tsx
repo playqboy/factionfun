@@ -35,7 +35,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <PrivyProvider
         appId={privyAppId}
         config={{
-          loginMethods: ["wallet"],
           appearance: {
             theme: "dark",
             accentColor: "#00BFFF",
@@ -45,7 +44,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
               "phantom",
               "solflare",
               "backpack",
-              "metamask",
               "detected_solana_wallets",
             ],
           },
