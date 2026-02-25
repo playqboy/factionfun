@@ -180,7 +180,7 @@ export default function LandingPage() {
       <FloatingHeader />
       <div className="relative z-10">
       {/* Hero */}
-      <div className="flex flex-col items-center justify-center min-h-screen px-4 sm:px-6">
+      <div className="flex flex-col items-center justify-center min-h-screen pt-6 px-4 sm:px-6">
           <motion.div
             className="max-w-3xl text-center"
             initial={{ opacity: 0 }}
