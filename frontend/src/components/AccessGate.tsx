@@ -29,8 +29,8 @@ function GateCard({
     <div className="flex-1 flex items-center justify-center">
       <Card className="bg-card/50 border-border/40 max-w-sm">
         <CardContent className="text-center p-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-sm bg-[#00BFFF]/8 border border-[#00BFFF]/15 mb-5">
-            <Icon className="w-6 h-6 text-[#00BFFF]" />
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-sm icon-box mb-5">
+            <Icon className="w-6 h-6 text-primary" />
           </div>
           <h3 className="text-lg font-bold text-foreground mb-2">{title}</h3>
           <p className="text-sm text-muted-foreground leading-relaxed mb-6">
@@ -82,7 +82,7 @@ export default function AccessGate({
           <Button
             onClick={onAuthenticate}
             disabled={isAuthenticating}
-            className="bg-gradient-to-r from-[#00BFFF] to-[#0066FF] text-white border-0 hover:opacity-90 glow-accent"
+            className="btn-gradient glow-accent"
           >
             {isAuthenticating ? (
               <>

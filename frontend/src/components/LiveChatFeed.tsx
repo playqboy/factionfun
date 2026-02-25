@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, memo } from "react";
-import { FaMessage, FaTowerBroadcast } from "react-icons/fa6";
+import { FaMessage } from "react-icons/fa6";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { fetchRecentMessages, type FeedMessageResponse } from "@/lib/api";
@@ -96,22 +96,11 @@ export default memo(function LiveChatFeed() {
       {/* Header */}
       <div className="px-4 py-3 border-b border-border/40 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <FaMessage className="w-3.5 h-3.5 text-[#00BFFF]" />
+          <FaMessage className="w-3.5 h-3.5 text-primary" />
           <span className="text-xs font-semibold text-foreground">
             Live Feed
           </span>
         </div>
-        <Badge
-          variant="outline"
-          className={`gap-1 text-[10px] py-0 ${
-            connected
-              ? "border-success/25 bg-success/8 text-success"
-              : "border-yellow-500/25 bg-yellow-500/8 text-yellow-500"
-          }`}
-        >
-          <FaTowerBroadcast className="w-2.5 h-2.5 animate-pulse" />
-          {connected ? "Live" : "Connecting"}
-        </Badge>
       </div>
 
       {/* Messages */}
@@ -136,7 +125,7 @@ export default memo(function LiveChatFeed() {
                 className={`flex items-start gap-2 py-1.5 px-2 rounded-sm hover:bg-secondary/30 transition-colors${i === 0 ? " animate-fade-in" : ""}`}
               >
                 <div className="flex-shrink-0 mt-0.5">
-                  <span className="text-[10px] font-mono text-[#00BFFF]/70 bg-[#00BFFF]/5 px-1.5 py-0.5 rounded-sm border border-[#00BFFF]/10">
+                  <span className="text-[10px] font-mono text-primary/70 bg-primary/5 px-1.5 py-0.5 rounded-sm border border-primary/10">
                     {msg.ticker}
                   </span>
                 </div>

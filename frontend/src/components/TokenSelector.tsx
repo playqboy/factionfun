@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, memo } from "react";
-import { FaMagnifyingGlass, FaArrowRight } from "react-icons/fa6";
+import { FaMagnifyingGlass } from "react-icons/fa6";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -49,7 +49,7 @@ export default memo(function TokenSelector({
               setError("");
             }}
             placeholder="Paste token mint..."
-            className="pl-8 h-9 text-xs bg-white/[0.04] border-border/30 focus-visible:ring-[#00BFFF]/30 focus-visible:border-[#00BFFF]/40 placeholder:text-muted-foreground/40"
+            className="pl-8 h-9 text-xs bg-bg-subtle-hover border-border/30 focus-visible:ring-primary/30 focus-visible:border-primary/40 placeholder:text-muted-foreground/40"
           />
         </div>
 
@@ -59,10 +59,9 @@ export default memo(function TokenSelector({
 
         <Button
           type="submit"
-          className="w-full bg-gradient-to-r from-[#00BFFF] to-[#0066FF] text-white border-0 hover:opacity-90 h-9 text-xs font-semibold"
+          className="w-full btn-gradient h-9 text-xs font-semibold"
         >
           {currentMint ? "Switch Token" : "Enter Chat"}
-          <FaArrowRight className="w-3 h-3 ml-1.5" />
         </Button>
       </form>
 

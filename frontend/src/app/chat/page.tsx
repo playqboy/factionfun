@@ -1,17 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import {
   FaCrown,
-  FaSignal,
   FaMessage,
   FaAnglesLeft,
   FaBarsStaggered,
   FaRightFromBracket,
-  FaTriangleExclamation,
+  FaCopy,
+  FaCheck,
 } from "react-icons/fa6";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +25,9 @@ import { useChat } from "@/hooks/useChat";
 import TokenSelector from "@/components/TokenSelector";
 import Leaderboard from "@/components/Leaderboard";
 import ChatWindow from "@/components/ChatWindow";
+import TokenSubBar from "@/components/TokenSubBar";
+import { useWalletHoldings } from "@/hooks/useWalletHoldings";
+import { useFavorites } from "@/hooks/useFavorites";
 
 export default function ChatPage() {
   const {
@@ -38,24 +41,85 @@ export default function ChatPage() {
   const [tokenMint, setTokenMint] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const { data: holders, isLoading: holdersLoading, isError: holdersError } =
-    useTopHolders(tokenMint);
-  const { data: userStatus, isError: userStatusError } = useUserStatus(tokenMint, walletAddress);
-  const { data: tokenInfo, isError: tokenInfoError } = useTokenInfo(tokenMint);
+  const { data: holdingsData, isLoading: holdingsLoading } = useWalletHoldings(walletAddress);
+  const { favorites, isLoading: favoritesLoading, isFavorited, toggleFavorite } = useFavorites(authToken);
+  const { data: holders, isLoading: holdersLoading } = useTopHolders(tokenMint);
+  const { data: userStatus } = useUserStatus(tokenMint, walletAddress);
+  const { data: tokenInfo } = useTokenInfo(tokenMint);
   const {
     messages,
     loading: chatLoading,
     sendMessage,
   } = useChat(tokenMint, authToken);
 
-  const hasQueryError = holdersError || userStatusError || tokenInfoError;
+  // Typing effect for nav header
+  const idleText = "Select token to read chat";
+  const livePrefix = tokenMint
+    ? tokenInfo
+      ? `Live chat for ${tokenInfo.name} ${tokenInfo.symbol} `
+      : "Live chat for "
+    : "";
+  const liveText = tokenMint ? livePrefix + tokenMint : "";
+  const targetText = liveText || idleText;
+  const [copied, setCopied] = useState(false);
+  const [displayedText, setDisplayedText] = useState("");
+  const prevTargetRef = useRef("");
+  const phaseRef = useRef<"idle" | "deleting" | "typing">("idle");
+  const activeTimerRef = useRef<ReturnType<typeof setInterval>>(undefined);
+
+  useEffect(() => {
+    if (targetText === prevTargetRef.current && phaseRef.current === "idle") return;
+    // Clear any running timer from a previous run
+    clearInterval(activeTimerRef.current);
+
+    const oldText = prevTargetRef.current;
+    prevTargetRef.current = targetText;
+
+    // If nothing displayed yet (initial load), just type forward
+    if (!oldText) {
+      phaseRef.current = "typing";
+      let i = 0;
+      activeTimerRef.current = setInterval(() => {
+        i++;
+        setDisplayedText(targetText.slice(0, i));
+        if (i >= targetText.length) {
+          clearInterval(activeTimerRef.current);
+          phaseRef.current = "idle";
+        }
+      }, 18);
+      return () => clearInterval(activeTimerRef.current);
+    }
+
+    // Delete old text, then type new text
+    phaseRef.current = "deleting";
+    let len = oldText.length;
+    activeTimerRef.current = setInterval(() => {
+      len--;
+      setDisplayedText(oldText.slice(0, len));
+      if (len <= 0) {
+        clearInterval(activeTimerRef.current);
+        // Now type new text
+        phaseRef.current = "typing";
+        let i = 0;
+        activeTimerRef.current = setInterval(() => {
+          i++;
+          setDisplayedText(targetText.slice(0, i));
+          if (i >= targetText.length) {
+            clearInterval(activeTimerRef.current);
+            phaseRef.current = "idle";
+          }
+        }, 18);
+      }
+    }, 12);
+    return () => clearInterval(activeTimerRef.current);
+  }, [targetText]);
 
   return (
     <div className="h-screen flex bg-background">
       {/* ── Desktop sidebar ── */}
-      <aside className="w-[260px] flex-shrink-0 hidden md:flex flex-col border-r border-white/[0.06] bg-background">
+      <aside className="w-[260px] flex-shrink-0 hidden md:flex flex-col border-r border-border-subtle bg-background">
         {/* Sidebar header */}
-        <div className="h-14 flex items-center gap-2.5 px-5 border-b border-white/[0.06] flex-shrink-0">
+        <div className="h-14 flex items-center gap-2.5 px-5 border-b border-border-subtle flex-shrink-0">
           <Link href="/" className="flex items-center gap-2.5">
             <Image
               src="/logo.png"
@@ -87,7 +151,7 @@ export default function ChatPage() {
 
           {tokenMint && (
             <>
-              <div className="mx-4 border-t border-white/[0.06]" />
+              <div className="mx-4 border-t border-border-subtle" />
               <div className="p-4 flex-1">
                 <motion.div
                   initial={{ opacity: 0, y: 6 }}
@@ -109,7 +173,7 @@ export default function ChatPage() {
       {/* ── Main area ── */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top bar */}
-        <nav className="h-14 border-b border-white/[0.06] flex-shrink-0 flex items-center justify-between px-4 sm:px-5 bg-background/80 backdrop-blur-xl">
+        <nav className="h-14 border-b border-border-subtle flex-shrink-0 flex items-center justify-between px-4 sm:px-5 bg-background/80 backdrop-blur-xl">
           {/* Left */}
           <div className="flex items-center gap-2.5">
             {/* Mobile: logo + sidebar toggle */}
@@ -142,23 +206,35 @@ export default function ChatPage() {
               </span>
             </Link>
 
-            {/* Desktop: token info */}
-            {tokenInfo && (
-              <div className="hidden md:flex items-center gap-2">
-                <span className="text-sm font-semibold text-foreground">
-                  {tokenInfo.symbol}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {tokenInfo.name}
-                </span>
-              </div>
-            )}
-
-            {!tokenInfo && (
-              <span className="hidden md:block text-sm text-muted-foreground">
-                Select a token
-              </span>
-            )}
+            {/* Desktop: typing header */}
+            <span className="hidden md:flex items-center text-sm text-muted-foreground font-mono truncate max-w-[500px]">
+              {tokenMint && displayedText.length > livePrefix.length ? (
+                <>
+                  {displayedText.slice(0, livePrefix.length)}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(tokenMint);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 1500);
+                    }}
+                    className="inline-flex items-center gap-1 hover:text-primary transition-colors cursor-pointer ml-1"
+                  >
+                    {displayedText.slice(livePrefix.length)}
+                    {phaseRef.current === "idle" && (
+                      copied ? (
+                        <FaCheck className="w-2.5 h-2.5 text-success flex-shrink-0" />
+                      ) : (
+                        <FaCopy className="w-2.5 h-2.5 opacity-40 flex-shrink-0" />
+                      )
+                    )}
+                  </button>
+                </>
+              ) : (
+                displayedText
+              )}
+              <span className="animate-pulse">|</span>
+            </span>
           </div>
 
           {/* Right */}
@@ -166,29 +242,21 @@ export default function ChatPage() {
             {userStatus?.isInTop10 && (
               <Badge
                 variant="outline"
-                className="border-[#00BFFF]/25 bg-[#00BFFF]/8 text-[#00BFFF] gap-1 text-xs"
+                className="border-primary/25 bg-primary/8 text-primary gap-1 text-xs"
               >
                 <FaCrown className="w-3 h-3" />
                 #{userStatus.rank}
               </Badge>
             )}
 
-            {tokenMint && (
-              <Badge
-                variant="outline"
-                className="border-success/25 bg-success/8 text-success gap-1 text-xs hidden sm:flex"
-              >
-                <FaSignal className="w-2.5 h-2.5" />
-                Live
-              </Badge>
-            )}
-
             {/* Privy wallet button */}
-            {walletAddress ? (
+            {isAuthenticated ? (
               <div className="flex items-center gap-1.5">
-                <span className="text-xs font-mono text-muted-foreground hidden sm:block">
-                  {walletAddress.slice(0, 4)}...{walletAddress.slice(-4)}
-                </span>
+                {walletAddress && (
+                  <span className="text-xs font-mono text-muted-foreground hidden sm:block">
+                    {walletAddress.slice(0, 4)}...{walletAddress.slice(-4)}
+                  </span>
+                )}
                 <Button
                   onClick={logout}
                   variant="ghost"
@@ -202,7 +270,7 @@ export default function ChatPage() {
               <Button
                 onClick={authenticate}
                 size="sm"
-                className="bg-gradient-to-r from-[#00BFFF] to-[#0066FF] text-white border-0 hover:opacity-90 text-xs font-semibold"
+                className="btn-gradient text-xs font-semibold"
               >
                 Connect Wallet
               </Button>
@@ -229,10 +297,10 @@ export default function ChatPage() {
               animate={{ x: 0 }}
               exit={{ x: -260 }}
               transition={{ type: "spring", damping: 28, stiffness: 300 }}
-              className="fixed left-0 top-0 bottom-0 w-[260px] bg-background border-r border-white/[0.06] z-40 md:hidden flex flex-col"
+              className="fixed left-0 top-0 bottom-0 w-[260px] bg-background border-r border-border-subtle z-40 md:hidden flex flex-col"
             >
               {/* Mobile sidebar header */}
-              <div className="h-14 flex items-center justify-between px-5 border-b border-white/[0.06] flex-shrink-0">
+              <div className="h-14 flex items-center justify-between px-5 border-b border-border-subtle flex-shrink-0">
                 <Link href="/" className="flex items-center gap-2.5">
                   <Image
                     src="/logo.png"
@@ -268,7 +336,7 @@ export default function ChatPage() {
                 </div>
                 {tokenMint && (
                   <>
-                    <div className="mx-4 border-t border-white/[0.06]" />
+                    <div className="mx-4 border-t border-border-subtle" />
                     <div className="p-4">
                       <Leaderboard
                         holders={holders || []}
@@ -283,6 +351,18 @@ export default function ChatPage() {
           )}
         </AnimatePresence>
 
+        {/* Sub-bar: favorites + holdings tabs */}
+        {walletAddress && (
+          <TokenSubBar
+            favorites={favorites}
+            holdings={holdingsData?.holdings ?? []}
+            isLoadingFavorites={favoritesLoading}
+            isLoadingHoldings={holdingsLoading}
+            currentMint={tokenMint}
+            onSelect={setTokenMint}
+          />
+        )}
+
         {/* Chat area */}
         <div className="flex-1 flex flex-col min-h-0">
           {!tokenMint ? (
@@ -293,8 +373,8 @@ export default function ChatPage() {
                 transition={{ duration: 0.5 }}
                 className="text-center"
               >
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-sm bg-[#00BFFF]/8 border border-[#00BFFF]/15 mb-6">
-                  <FaMessage className="w-7 h-7 text-[#00BFFF]" />
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-sm icon-box mb-6">
+                  <FaMessage className="w-7 h-7 text-primary" />
                 </div>
                 <h3 className="text-xl font-bold text-foreground mb-2">
                   Enter a Faction
@@ -323,14 +403,6 @@ export default function ChatPage() {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3 }}
             >
-              {hasQueryError && (
-                <div className="px-5 py-2 flex items-center gap-2 text-yellow-400 bg-yellow-500/5 border-b border-yellow-500/10 flex-shrink-0">
-                  <FaTriangleExclamation className="w-3 h-3 flex-shrink-0" />
-                  <span className="text-xs">
-                    Failed to load some data. Retrying...
-                  </span>
-                </div>
-              )}
               <ChatWindow
                 messages={messages}
                 onSend={sendMessage}
@@ -353,7 +425,16 @@ export default function ChatPage() {
                           ? "not-top10"
                           : "ready"
                 }
-                onConnect={authenticate}
+                isFavorited={tokenMint ? isFavorited(tokenMint) : false}
+                onToggleFavorite={
+                  tokenMint && isAuthenticated
+                    ? () =>
+                        toggleFavorite(tokenMint, {
+                          name: tokenInfo?.name,
+                          symbol: tokenInfo?.symbol,
+                        })
+                    : undefined
+                }
               />
             </motion.div>
           )}

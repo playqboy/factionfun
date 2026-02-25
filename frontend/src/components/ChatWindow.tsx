@@ -5,11 +5,10 @@ import {
   FaPaperPlane,
   FaMessage,
   FaSpinner,
-  FaLock,
-  FaWallet,
   FaCopy,
   FaCheck,
   FaTriangleExclamation,
+  FaStar,
 } from "react-icons/fa6";
 import type { ChatMessageResponse, HolderResponse } from "@/lib/api";
 import { formatTime } from "@/lib/utils";
@@ -31,7 +30,8 @@ interface ChatWindowProps {
   isLoading?: boolean;
   canSend?: boolean;
   inputStatus?: "connect" | "not-top10" | "authenticating" | "ready";
-  onConnect?: () => void;
+  isFavorited?: boolean;
+  onToggleFavorite?: () => void;
 }
 
 /* ── Memoized single message row ── */
@@ -65,7 +65,7 @@ const MessageRow = memo(function MessageRow({
           {rank !== undefined && (
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="text-[10px] font-bold text-[#00BFFF] cursor-default">
+                <span className="text-[10px] font-bold text-primary cursor-default">
                   #{rank}
                 </span>
               </TooltipTrigger>
@@ -77,13 +77,13 @@ const MessageRow = memo(function MessageRow({
               <button
                 type="button"
                 onClick={() => onCopyWallet(msg.walletAddress)}
-                className={`text-[11px] font-mono font-semibold inline-flex items-center gap-1 hover:text-[#00BFFF] transition-colors cursor-pointer ${
-                  isOwn ? "text-[#00BFFF]" : "text-foreground/70"
+                className={`text-[11px] font-mono font-semibold inline-flex items-center gap-1 hover:text-primary transition-colors cursor-pointer ${
+                  isOwn ? "text-primary" : "text-foreground/70"
                 }`}
               >
                 {msg.walletAddress.slice(0, 5)}...
                 {copiedWallet === msg.walletAddress ? (
-                  <FaCheck className="w-2.5 h-2.5 text-green-400" />
+                  <FaCheck className="w-2.5 h-2.5 text-success" />
                 ) : (
                   <FaCopy className="w-2.5 h-2.5 opacity-40" />
                 )}
@@ -114,8 +114,8 @@ const MessageRow = memo(function MessageRow({
         <div
           className={`max-w-[70%] px-3.5 py-2 text-[13px] leading-relaxed ${
             isOwn
-              ? "bg-gradient-to-br from-[#00BFFF]/10 to-[#0066FF]/10 border border-[#00BFFF]/15 text-foreground rounded-sm rounded-br-none"
-              : "bg-white/[0.03] border border-white/[0.06] text-foreground rounded-sm rounded-bl-none"
+              ? "bg-gradient-to-br from-primary/10 to-accent-deep/10 border border-primary/15 text-foreground rounded-sm rounded-br-none"
+              : "bg-bg-subtle border border-border-subtle text-foreground rounded-sm rounded-bl-none"
           }`}
         >
           {msg.content}
@@ -133,7 +133,8 @@ export default memo(function ChatWindow({
   isLoading,
   canSend = true,
   inputStatus = "ready",
-  onConnect,
+  isFavorited,
+  onToggleFavorite,
 }: ChatWindowProps) {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -228,76 +229,47 @@ export default memo(function ChatWindow({
     }
   }
 
-  /* ── Gate bar (shown when user can't send) ── */
-  function renderGateBar() {
-    if (inputStatus === "connect") {
-      return (
-        <div className="flex items-center justify-between px-5 py-3">
-          <div className="flex items-center gap-2.5 text-muted-foreground">
-            <div className="flex items-center justify-center w-7 h-7 rounded-sm bg-muted/50">
-              <FaWallet className="w-3.5 h-3.5" />
-            </div>
-            <span className="text-xs font-medium">
-              Connect your wallet to chat
-            </span>
-          </div>
-          {onConnect && (
-            <Button
-              onClick={onConnect}
-              size="sm"
-              className="bg-gradient-to-r from-[#00BFFF] to-[#0066FF] text-white border-0 hover:opacity-90 h-8 text-xs px-4"
-            >
-              Connect
-            </Button>
-          )}
-        </div>
-      );
-    }
-
-    if (inputStatus === "authenticating") {
-      return (
-        <div className="flex items-center gap-2.5 px-5 py-3.5 text-muted-foreground">
-          <div className="flex items-center justify-center w-7 h-7 rounded-sm bg-muted/50">
-            <FaSpinner className="w-3.5 h-3.5 animate-spin" />
-          </div>
-          <span className="text-xs font-medium">
-            Verifying wallet...
-          </span>
-        </div>
-      );
-    }
-
-    if (inputStatus === "not-top10") {
-      return (
-        <div className="flex items-center gap-2.5 px-5 py-3.5 text-muted-foreground">
-          <div className="flex items-center justify-center w-7 h-7 rounded-sm bg-muted/50">
-            <FaLock className="w-3.5 h-3.5" />
-          </div>
-          <span className="text-xs font-medium">
-            Only top 10 holders can send messages
-          </span>
-        </div>
-      );
-    }
-
-    return null;
-  }
+  const inputPlaceholder =
+    inputStatus === "connect"
+      ? "Connect wallet to chat..."
+      : inputStatus === "authenticating"
+        ? "Verifying wallet..."
+        : inputStatus === "not-top10"
+          ? "Only top 10 holders can chat"
+          : "Type a message...";
 
   return (
     <div className="flex flex-col h-full">
       {/* ── Chat header ── */}
-      <div className="px-5 py-3 border-b border-white/[0.06] flex items-center gap-2.5 flex-shrink-0">
-        <div className="flex items-center justify-center w-7 h-7 rounded-sm bg-[#00BFFF]/8 border border-[#00BFFF]/15">
-          <FaMessage className="w-3.5 h-3.5 text-[#00BFFF]" />
+      <div className="px-5 py-3 border-b border-border-subtle flex items-center justify-between flex-shrink-0">
+        <div className="flex items-center gap-2.5">
+          <div className="flex items-center justify-center w-7 h-7 rounded-sm icon-box">
+            <FaMessage className="w-3.5 h-3.5 text-primary" />
+          </div>
+          <div>
+            <span className="text-sm font-semibold text-foreground leading-none block">
+              Faction Chat
+            </span>
+            <span className="text-[10px] text-muted-foreground leading-none mt-0.5 block tabular-nums">
+              {messages.length} {messages.length === 1 ? "message" : "messages"}
+            </span>
+          </div>
         </div>
-        <div>
-          <span className="text-sm font-semibold text-foreground leading-none block">
-            Faction Chat
-          </span>
-          <span className="text-[10px] text-muted-foreground leading-none mt-0.5 block tabular-nums">
-            {messages.length} {messages.length === 1 ? "message" : "messages"}
-          </span>
-        </div>
+        {onToggleFavorite && (
+          <button
+            type="button"
+            onClick={onToggleFavorite}
+            className="p-1.5 rounded-sm transition-colors cursor-pointer hover:bg-bg-subtle-hover"
+          >
+            <FaStar
+              className={`w-4 h-4 transition-colors ${
+                isFavorited
+                  ? "text-primary"
+                  : "text-muted-foreground/40 hover:text-muted-foreground"
+              }`}
+            />
+          </button>
+        )}
       </div>
 
       {/* ── Messages ── */}
@@ -307,7 +279,7 @@ export default memo(function ChatWindow({
           {isLoading ? (
             <div className="flex items-center justify-center py-24">
               <div className="text-center">
-                <FaSpinner className="w-6 h-6 text-[#00BFFF] animate-spin mx-auto mb-3" />
+                <FaSpinner className="w-6 h-6 text-primary animate-spin mx-auto mb-3" />
                 <p className="text-muted-foreground text-xs font-medium">
                   Loading messages...
                 </p>
@@ -316,8 +288,8 @@ export default memo(function ChatWindow({
           ) : messages.length === 0 ? (
             <div className="flex items-center justify-center py-24">
               <div className="text-center">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-sm bg-[#00BFFF]/8 border border-[#00BFFF]/15 mb-4 mx-auto">
-                  <FaMessage className="w-5 h-5 text-[#00BFFF]/60" />
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-sm icon-box mb-4 mx-auto">
+                  <FaMessage className="w-5 h-5 text-primary/60" />
                 </div>
                 <p className="text-sm font-medium text-foreground/70 mb-1">
                   No messages yet
@@ -355,43 +327,40 @@ export default memo(function ChatWindow({
       </ScrollArea>
 
       {/* ── Input area ── */}
-      <div className="border-t border-white/[0.06] flex-shrink-0">
+      <div className="border-t border-border-subtle flex-shrink-0">
         {sendError && (
-          <div className="px-4 py-2 flex items-center gap-2 text-red-400 bg-red-500/5 border-b border-red-500/10">
+          <div className="px-4 py-2 flex items-center gap-2 text-error bg-error/5 border-b border-error/10">
             <FaTriangleExclamation className="w-3 h-3 flex-shrink-0" />
             <span className="text-xs">{sendError}</span>
           </div>
         )}
-        {canSend ? (
-          <form
-            onSubmit={handleSend}
-            className="px-4 py-3 flex items-center gap-2"
+        <form
+          onSubmit={handleSend}
+          className="px-4 py-3 flex items-center gap-2"
+        >
+          <Input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={inputPlaceholder}
+            maxLength={500}
+            disabled={!canSend}
+            className="flex-1 bg-bg-subtle-hover border-border-subtle h-10 text-sm focus-visible:ring-primary/30 focus-visible:border-primary/40 placeholder:text-muted-foreground/40"
+          />
+          <Button
+            type="submit"
+            disabled={!canSend || !input.trim() || sending}
+            size="icon"
+            className="w-10 h-10 btn-gradient flex-shrink-0"
           >
-            <Input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Type a message..."
-              maxLength={500}
-              className="flex-1 bg-white/[0.04] border-white/[0.06] h-10 text-sm focus-visible:ring-[#00BFFF]/30 focus-visible:border-[#00BFFF]/40 placeholder:text-muted-foreground/40"
-            />
-            <Button
-              type="submit"
-              disabled={!input.trim() || sending}
-              size="icon"
-              className="w-10 h-10 bg-gradient-to-r from-[#00BFFF] to-[#0066FF] text-white border-0 hover:opacity-90 flex-shrink-0"
-            >
-              {sending ? (
-                <FaSpinner className="w-4 h-4 animate-spin" />
-              ) : (
-                <FaPaperPlane className="w-4 h-4" />
-              )}
-            </Button>
-          </form>
-        ) : (
-          renderGateBar()
-        )}
+            {sending ? (
+              <FaSpinner className="w-4 h-4 animate-spin" />
+            ) : (
+              <FaPaperPlane className="w-4 h-4" />
+            )}
+          </Button>
+        </form>
       </div>
     </div>
   );
