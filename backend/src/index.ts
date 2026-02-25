@@ -20,9 +20,18 @@ async function main() {
   // Create Express app
   const app = express();
 
-  app.use(helmet());
+  app.use(helmet({
+    contentSecurityPolicy: config.nodeEnv === 'production' ? {
+      directives: {
+        defaultSrc: ["'self'"],
+        connectSrc: ["'self'", 'https:', 'wss:'],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+      },
+    } : false,
+  }));
   app.use(cors({ origin: config.corsOrigin }));
-  app.use(express.json());
+  app.use(express.json({ limit: '16kb' }));
   app.use(globalLimiter);
 
   // Health check — verifies DB connectivity
@@ -30,8 +39,7 @@ async function main() {
     try {
       await query('SELECT 1');
       res.json({ status: 'ok', timestamp: new Date().toISOString() });
-    } catch (err) {
-      console.error('Health check failed:', err);
+    } catch {
       res.status(503).json({ status: 'unhealthy', timestamp: new Date().toISOString() });
     }
   });
@@ -47,7 +55,9 @@ async function main() {
 
   // Global error handler
   app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-    console.error('Unhandled error:', err);
+    if (config.nodeEnv !== 'production') {
+      console.error('Unhandled error:', err);
+    }
     res.status(500).json({ error: 'Internal server error' });
   });
 
@@ -56,7 +66,7 @@ async function main() {
   const wss = createWebSocketServer(httpServer);
 
   httpServer.listen(config.port, () => {
-    console.log(`Server running on port ${config.port} (HTTP + WebSocket)`);
+    console.log(`Server running on port ${config.port}`);
   });
 
   // Start background ranking job
@@ -64,10 +74,7 @@ async function main() {
 
   // Graceful shutdown with forced exit timeout
   const shutdown = async () => {
-    console.log('\nShutting down...');
-
     const forceExit = setTimeout(() => {
-      console.error('Forced shutdown after timeout');
       process.exit(1);
     }, 10000);
 
@@ -75,9 +82,8 @@ async function main() {
       httpServer.close();
       wss.close();
       await pool.end();
-      console.log('Shutdown complete');
-    } catch (err) {
-      console.error('Error during shutdown:', err);
+    } catch {
+      // Best-effort shutdown
     }
 
     clearTimeout(forceExit);

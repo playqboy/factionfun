@@ -26,8 +26,8 @@ export function useChat(tokenMint: string | null, authToken: string | null) {
       .then((msgs) => {
         if (!controller.signal.aborted) setMessages(msgs);
       })
-      .catch((err) => {
-        if (!controller.signal.aborted) console.error("Failed to load messages:", err);
+      .catch(() => {
+        // Failed to load messages — UI will show empty state
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);

@@ -65,7 +65,7 @@ export async function fetchTopHolders(tokenMint: string): Promise<Holder[]> {
     walletAddress,
     balance,
     percentage: totalSupply > 0n
-      ? Number((balance * 10000n) / totalSupply) / 100
+      ? Number((balance * 1_000_000n) / totalSupply) / 10_000
       : 0,
     rank: index + 1,
   }));

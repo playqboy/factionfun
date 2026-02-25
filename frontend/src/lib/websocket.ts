@@ -1,4 +1,8 @@
-const WS_BASE = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:3001";
+const WS_BASE = process.env.NEXT_PUBLIC_WS_URL || (
+  typeof window !== "undefined" && window.location.hostname !== "localhost"
+    ? (() => { throw new Error("NEXT_PUBLIC_WS_URL must be set in production"); })()
+    : "ws://localhost:3001"
+);
 
 export type WSEventType = "message" | "rankings" | "user_joined" | "user_left";
 
@@ -39,8 +43,8 @@ export function createChatSocket(
       try {
         const parsed: WSEvent = JSON.parse(event.data);
         onEvent(parsed);
-      } catch (err) {
-        console.error("Failed to parse WS message:", err);
+      } catch {
+        // Malformed message — ignore
       }
     };
 
@@ -91,8 +95,8 @@ export function createFeedSocket(
       try {
         const parsed: WSEvent = JSON.parse(event.data);
         onEvent(parsed);
-      } catch (err) {
-        console.error("Failed to parse WS feed message:", err);
+      } catch {
+        // Malformed message — ignore
       }
     };
 

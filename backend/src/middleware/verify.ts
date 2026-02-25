@@ -1,6 +1,7 @@
 import { type Response, type NextFunction } from 'express';
 import type { AuthenticatedRequest } from './auth.js';
 import { getUserStatus } from '../services/holderService.js';
+import { isValidSolanaAddress } from '../utils/validation.js';
 
 export function requireTop10(mintParamName: string = 'mint') {
   return async (
@@ -8,11 +9,25 @@ export function requireTop10(mintParamName: string = 'mint') {
     res: Response,
     next: NextFunction
   ): Promise<void> => {
-    const tokenMint = req.params[mintParamName] || req.body.tokenMint;
+    // Use params first, fallback to body — but ensure they match if both present
+    const paramMint = req.params[mintParamName];
+    const bodyMint = req.body?.tokenMint;
+    const tokenMint = paramMint || bodyMint;
     const walletAddress = req.walletAddress;
 
     if (!walletAddress || !tokenMint) {
       res.status(400).json({ error: 'Missing wallet address or token mint' });
+      return;
+    }
+
+    // Prevent mismatch: if both param and body provide a mint, they must agree
+    if (paramMint && bodyMint && paramMint !== bodyMint) {
+      res.status(400).json({ error: 'Token mint mismatch' });
+      return;
+    }
+
+    if (!isValidSolanaAddress(tokenMint)) {
+      res.status(400).json({ error: 'Invalid token mint address' });
       return;
     }
 
@@ -23,8 +38,7 @@ export function requireTop10(mintParamName: string = 'mint') {
         return;
       }
       next();
-    } catch (err) {
-      console.error('Top 10 verification failed:', err);
+    } catch {
       res.status(500).json({ error: 'Failed to verify holder status' });
     }
   };

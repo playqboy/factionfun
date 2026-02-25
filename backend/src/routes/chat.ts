@@ -1,7 +1,7 @@
 import { Router, type Response } from 'express';
 import { requireAuth, type AuthenticatedRequest } from '../middleware/auth.js';
 import { requireTop10 } from '../middleware/verify.js';
-import { chatMessageLimiter } from '../middleware/rateLimit.js';
+import { chatMessageLimiter, publicApiLimiter } from '../middleware/rateLimit.js';
 import { storeMessage, getMessages, getRecentMessagesGlobal, getTokenSymbol } from '../services/chatService.js';
 import { broadcastMessage } from '../websocket/handlers.js';
 import { isValidSolanaAddress } from '../utils/validation.js';
@@ -9,18 +9,17 @@ import { isValidSolanaAddress } from '../utils/validation.js';
 export const chatRoutes = Router();
 
 // GET /api/chat/recent — recent messages across all tokens (for homepage feed)
-chatRoutes.get('/recent', async (_req, res) => {
+chatRoutes.get('/recent', publicApiLimiter, async (_req, res) => {
   try {
     const messages = await getRecentMessagesGlobal(20);
     res.json(messages);
-  } catch (err) {
-    console.error('Failed to fetch recent messages:', err);
+  } catch {
     res.status(500).json({ error: 'Failed to fetch recent messages' });
   }
 });
 
 // GET /api/chat/:mint/messages?limit=50&offset=0
-chatRoutes.get('/:mint/messages', async (req, res) => {
+chatRoutes.get('/:mint/messages', publicApiLimiter, async (req, res) => {
   const { mint } = req.params;
 
   if (!isValidSolanaAddress(mint)) {
@@ -29,13 +28,12 @@ chatRoutes.get('/:mint/messages', async (req, res) => {
   }
 
   const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
-  const offset = Math.max(parseInt(req.query.offset as string) || 0, 0);
+  const offset = Math.min(Math.max(parseInt(req.query.offset as string) || 0, 0), 10000);
 
   try {
     const messages = await getMessages(mint, limit, offset);
     res.json(messages);
-  } catch (err) {
-    console.error('Failed to fetch messages:', err);
+  } catch {
     res.status(500).json({ error: 'Failed to fetch messages' });
   }
 });
@@ -50,8 +48,13 @@ chatRoutes.post(
     const { tokenMint, content } = req.body;
     const walletAddress = req.walletAddress!;
 
-    if (!tokenMint || !content) {
+    if (!tokenMint || !content || typeof content !== 'string') {
       res.status(400).json({ error: 'Missing tokenMint or content' });
+      return;
+    }
+
+    if (content.length > 500) {
+      res.status(400).json({ error: 'Message too long (max 500 characters)' });
       return;
     }
 
@@ -68,9 +71,12 @@ chatRoutes.post(
       broadcastMessage(tokenMint, message, tokenSymbol);
       res.json({ messageId: message.id, status: 'sent' });
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
-      console.error('Failed to send message:', err);
-      res.status(400).json({ error: errorMessage });
+      // Only expose validation errors, not internal details
+      const isValidationError = err instanceof Error &&
+        (err.message === 'Message cannot be empty' || err.message === 'Message too long (max 500 characters)');
+      res.status(400).json({
+        error: isValidationError ? err.message : 'Failed to send message',
+      });
     }
   }
 );

@@ -2,6 +2,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import type { IncomingMessage, Server } from 'http';
 import type { ChatMessage, Holder } from '../types/index.js';
 import { config } from '../utils/config.js';
+import { isValidSolanaAddress } from '../utils/validation.js';
 
 // Map of tokenMint -> Set<WebSocket>
 const rooms = new Map<string, Set<WebSocket>>();
@@ -15,8 +16,11 @@ export function createWebSocketServer(server: Server): WebSocketServer {
     server,
     verifyClient: (info: { origin: string; req: IncomingMessage }) => {
       const origin = info.origin || info.req.headers.origin;
-      if (!origin) return config.nodeEnv !== 'production';
-      return config.corsOrigin === '*' || config.corsOrigin === origin;
+      if (!origin) return false; // Always require origin
+      if (config.nodeEnv !== 'production') {
+        return origin === 'http://localhost:3000' || origin === config.corsOrigin;
+      }
+      return config.corsOrigin === origin;
     },
   });
 
@@ -30,14 +34,13 @@ export function createWebSocketServer(server: Server): WebSocketServer {
     // Global feed: /feed
     if (pathParts.length === 1 && pathParts[0] === 'feed') {
       feedSubscribers.add(ws);
-      console.log(`WS client joined global feed (${feedSubscribers.size} clients)`);
 
       ws.on('close', () => {
         feedSubscribers.delete(ws);
       });
 
-      ws.on('error', (err) => {
-        console.error('WS feed client error:', err);
+      ws.on('error', () => {
+        // Silently handle — heartbeat will clean up dead connections
       });
       return;
     }
@@ -45,8 +48,8 @@ export function createWebSocketServer(server: Server): WebSocketServer {
     // Token room: /chat/:mint
     const mint = pathParts.length >= 2 && pathParts[0] === 'chat' ? pathParts[1] : null;
 
-    if (!mint) {
-      ws.close(1008, 'Missing token mint in URL path');
+    if (!mint || !isValidSolanaAddress(mint)) {
+      ws.close(1008, 'Invalid or missing token mint');
       return;
     }
 
@@ -56,8 +59,6 @@ export function createWebSocketServer(server: Server): WebSocketServer {
     }
     rooms.get(mint)!.add(ws);
 
-    console.log(`WS client joined room ${mint.slice(0, 8)}... (${rooms.get(mint)!.size} clients)`);
-
     ws.on('close', () => {
       rooms.get(mint)?.delete(ws);
       if (rooms.get(mint)?.size === 0) {
@@ -65,8 +66,8 @@ export function createWebSocketServer(server: Server): WebSocketServer {
       }
     });
 
-    ws.on('error', (err) => {
-      console.error('WS client error:', err);
+    ws.on('error', () => {
+      // Silently handle — heartbeat will clean up dead connections
     });
   });
 
@@ -84,8 +85,20 @@ export function createWebSocketServer(server: Server): WebSocketServer {
     });
   }, 30000);
 
-  console.log('WebSocket server attached to HTTP server');
+  if (config.nodeEnv !== 'production') {
+    console.log('WebSocket server attached to HTTP server');
+  }
   return wss;
+}
+
+function safeSend(ws: WebSocket, payload: string): void {
+  try {
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(payload);
+    }
+  } catch {
+    // Connection broken — heartbeat will clean it up
+  }
 }
 
 export function broadcastMessage(tokenMint: string, message: ChatMessage, tokenSymbol?: string): void {
@@ -97,11 +110,7 @@ export function broadcastMessage(tokenMint: string, message: ChatMessage, tokenS
   // Broadcast to token-specific room
   const subscribers = rooms.get(tokenMint);
   if (subscribers) {
-    subscribers.forEach((ws) => {
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.send(payload);
-      }
-    });
+    subscribers.forEach((ws) => safeSend(ws, payload));
   }
 
   // Broadcast to global feed subscribers with tokenSymbol
@@ -110,11 +119,7 @@ export function broadcastMessage(tokenMint: string, message: ChatMessage, tokenS
       type: 'message',
       data: { ...message, tokenSymbol: tokenSymbol || tokenMint.slice(0, 6) },
     });
-    feedSubscribers.forEach((ws) => {
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.send(feedPayload);
-      }
-    });
+    feedSubscribers.forEach((ws) => safeSend(ws, feedPayload));
   }
 }
 
@@ -127,11 +132,7 @@ export function broadcastRankingUpdate(tokenMint: string, holders: Holder[]): vo
     data: holders.map((h) => ({ ...h, balance: h.balance.toString() })),
   });
 
-  subscribers.forEach((ws) => {
-    if (ws.readyState === WebSocket.OPEN) {
-      ws.send(payload);
-    }
-  });
+  subscribers.forEach((ws) => safeSend(ws, payload));
 }
 
 export function broadcastMembershipEvent(
@@ -148,11 +149,7 @@ export function broadcastMembershipEvent(
     data: { walletAddress, rank },
   });
 
-  subscribers.forEach((ws) => {
-    if (ws.readyState === WebSocket.OPEN) {
-      ws.send(payload);
-    }
-  });
+  subscribers.forEach((ws) => safeSend(ws, payload));
 }
 
 export function getActiveTokenMints(): string[] {

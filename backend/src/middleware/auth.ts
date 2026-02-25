@@ -51,16 +51,20 @@ export async function requireAuth(
 
     req.walletAddress = walletAddress;
 
-    // 3. Upsert user (fire-and-forget — don't block the request)
-    query(
-      `INSERT INTO users (wallet_address) VALUES ($1)
-       ON CONFLICT (wallet_address) DO UPDATE SET last_active = NOW()`,
-      [walletAddress]
-    ).catch((err) => console.error('User upsert failed:', err));
+    // 3. Upsert user — must complete before proceeding (FK constraint on messages)
+    try {
+      await query(
+        `INSERT INTO users (wallet_address) VALUES ($1)
+         ON CONFLICT (wallet_address) DO UPDATE SET last_active = NOW()`,
+        [walletAddress]
+      );
+    } catch {
+      res.status(500).json({ error: 'Internal server error' });
+      return;
+    }
 
     next();
-  } catch (error) {
-    console.error('Privy auth verification failed:', error);
+  } catch {
     res.status(401).json({ error: 'Invalid or expired access token' });
   }
 }

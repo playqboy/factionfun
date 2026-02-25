@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS messages (
   id SERIAL PRIMARY KEY,
   token_mint VARCHAR(44) NOT NULL,
   wallet_address VARCHAR(44) NOT NULL,
-  content TEXT NOT NULL,
+  content TEXT NOT NULL CHECK (length(content) <= 500),
   signature VARCHAR(200) NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   CONSTRAINT fk_messages_user
@@ -27,6 +27,10 @@ CREATE INDEX IF NOT EXISTS idx_messages_token_created
 CREATE INDEX IF NOT EXISTS idx_messages_created
   ON messages(created_at DESC);
 
+-- Index on FK column for efficient joins and cascading operations
+CREATE INDEX IF NOT EXISTS idx_messages_wallet
+  ON messages(wallet_address);
+
 -- Rankings snapshot table
 CREATE TABLE IF NOT EXISTS rankings (
   id SERIAL PRIMARY KEY,
@@ -34,7 +38,7 @@ CREATE TABLE IF NOT EXISTS rankings (
   rank INTEGER NOT NULL CHECK (rank BETWEEN 1 AND 10),
   wallet_address VARCHAR(44) NOT NULL,
   balance NUMERIC NOT NULL,
-  percentage DECIMAL(5,2) NOT NULL,
+  percentage DECIMAL(5,2) NOT NULL CHECK (percentage >= 0 AND percentage <= 100),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE (token_mint, rank)
 );
