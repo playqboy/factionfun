@@ -285,7 +285,7 @@ export default memo(function ChatWindow({
                   </span>
                 )}
                 {tokenSymbol && (
-                  <span className="text-foreground/60">${tokenSymbol}</span>
+                  <span className="text-foreground/60">{tokenSymbol}</span>
                 )}
                 {tokenName && tokenSymbol && (
                   <span className="text-muted-foreground/40 hidden lg:inline">{tokenName}</span>

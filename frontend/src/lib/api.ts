@@ -86,6 +86,22 @@ export async function fetchWalletHoldings(
   return res.json();
 }
 
+export interface WalletRanksResponse {
+  wallet: string;
+  ranks: Record<string, { isTop10: boolean; rank: number | null }>;
+}
+
+export async function fetchWalletRanks(
+  wallet: string,
+  mints: string[]
+): Promise<WalletRanksResponse> {
+  const res = await fetchWithTimeout(
+    `${API_BASE}/wallet/${wallet}/holdings/ranks?mints=${mints.join(",")}`
+  );
+  if (!res.ok) throw new Error("Failed to fetch wallet ranks");
+  return res.json();
+}
+
 export interface FavoriteResponse {
   id: number;
   walletAddress: string;

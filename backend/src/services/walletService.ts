@@ -9,7 +9,7 @@ const HOLDINGS_CACHE_TTL = 60; // seconds
 const MCAP_CACHE_TTL = 120; // seconds
 const MAX_TOKENS = 50;
 const DEXSCREENER_BATCH = 30; // max addresses per request
-const CONCURRENCY_LIMIT = 5;
+const RANK_CONCURRENCY = 5;
 
 interface DexScreenerPair {
   baseToken?: { address?: string };
@@ -232,24 +232,8 @@ export async function fetchWalletHoldings(
     };
   });
 
-  // Fetch ranks and market caps in parallel
-  const [, mcaps] = await Promise.all([
-    withConcurrencyLimit(holdings, CONCURRENCY_LIMIT, async (holding) => {
-      try {
-        const allHolders = await fetchAllRankedHolders(holding.mint);
-        const match = allHolders.find(
-          (h) => h.walletAddress === walletAddress,
-        );
-        if (match) {
-          holding.isTop10 = match.rank <= 10;
-          holding.rank = match.rank;
-        }
-      } catch {
-        // Rank check failed for this token — leave defaults
-      }
-    }),
-    fetchMarketCaps(holdings.map((h) => h.mint)),
-  ]);
+  // Fetch market caps (batched, fast)
+  const mcaps = await fetchMarketCaps(holdings.map((h) => h.mint));
 
   for (const holding of holdings) {
     holding.marketCap = mcaps.get(holding.mint) ?? null;
@@ -258,5 +242,29 @@ export async function fetchWalletHoldings(
   const result = { wallet: walletAddress, holdings, totalCount };
 
   cache.set(cacheKey, JSON.stringify(result), HOLDINGS_CACHE_TTL);
+  return result;
+}
+
+/** Fetch rank data for a wallet across specific mints (slow — meant to be called lazily). */
+export async function fetchWalletRanks(
+  walletAddress: string,
+  mints: string[],
+): Promise<Record<string, { isTop10: boolean; rank: number | null }>> {
+  const result: Record<string, { isTop10: boolean; rank: number | null }> = {};
+
+  await withConcurrencyLimit(mints, RANK_CONCURRENCY, async (mint) => {
+    try {
+      const allHolders = await fetchAllRankedHolders(mint);
+      const match = allHolders.find((h) => h.walletAddress === walletAddress);
+      if (match) {
+        result[mint] = { isTop10: match.rank <= 10, rank: match.rank };
+      } else {
+        result[mint] = { isTop10: false, rank: null };
+      }
+    } catch {
+      result[mint] = { isTop10: false, rank: null };
+    }
+  });
+
   return result;
 }
