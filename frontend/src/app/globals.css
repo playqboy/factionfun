@@ -123,6 +123,14 @@ body {
 ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
 
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* Utilities */
 .glow-accent {
   box-shadow: 0 0 20px color-mix(in srgb, var(--primary) 10%, transparent), 0 0 60px color-mix(in srgb, var(--accent-deep) 5%, transparent);
@@ -167,6 +175,116 @@ body {
 }
 .animate-message-in {
   animation: messageSlideIn 0.35s ease-out both;
+}
+
+/* ---- Chat Feed Card ---- */
+@property --border-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes rotateBorder {
+  to { --border-angle: 360deg; }
+}
+
+@keyframes glowPulse {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.02); }
+}
+
+.chat-feed-wrapper {
+  position: relative;
+  border-radius: 12px;
+  animation: rotateBorder 6s linear infinite;
+}
+
+.chat-feed-glow {
+  position: absolute;
+  inset: -4px;
+  border-radius: 16px;
+  background: conic-gradient(
+    from var(--border-angle),
+    rgba(0, 191, 255, 0.25),
+    rgba(0, 102, 255, 0.12),
+    rgba(0, 191, 255, 0.04),
+    rgba(0, 102, 255, 0.12),
+    rgba(0, 191, 255, 0.25)
+  );
+  filter: blur(20px);
+  animation: glowPulse 4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.chat-feed-border {
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  padding: 1px;
+  background: conic-gradient(
+    from var(--border-angle),
+    rgba(0, 191, 255, 0.5),
+    rgba(0, 102, 255, 0.2),
+    rgba(255, 255, 255, 0.03),
+    rgba(0, 102, 255, 0.2),
+    rgba(0, 191, 255, 0.5)
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  transition: opacity 0.5s;
+}
+
+.chat-feed-wrapper:hover .chat-feed-border {
+  background: conic-gradient(
+    from var(--border-angle),
+    rgba(0, 191, 255, 0.7),
+    rgba(0, 102, 255, 0.35),
+    rgba(255, 255, 255, 0.06),
+    rgba(0, 102, 255, 0.35),
+    rgba(0, 191, 255, 0.7)
+  );
+}
+
+.chat-feed-inner {
+  position: relative;
+  border-radius: 12px;
+  background: linear-gradient(
+    170deg,
+    rgba(10, 10, 20, 0.92),
+    rgba(8, 8, 16, 0.96)
+  );
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  overflow: hidden;
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.4),
+    0 0 60px rgba(0, 102, 255, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+/* ---- Infinite Marquee ---- */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-33.333%); }
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 24s linear infinite;
+}
+
+.marquee-track:hover {
+  animation-play-state: paused;
+}
+
+.marquee-content {
+  display: flex;
+  gap: 1rem;
+  padding-right: 1rem;
 }
 
 @layer base {
