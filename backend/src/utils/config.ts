@@ -12,7 +12,7 @@ export interface Config {
   rateLimitMaxRequests: number;
   privyAppId: string;
   privyAppSecret: string;
-  privyVerificationKey: string;
+  privyVerificationKey: string | undefined;
 }
 
 function requireEnv(name: string): string {
@@ -53,5 +53,5 @@ export const config: Config = {
   rateLimitMaxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100', 10),
   privyAppId: requireEnv('PRIVY_APP_ID'),
   privyAppSecret: requireEnv('PRIVY_APP_SECRET'),
-  privyVerificationKey: normalizePem(requireEnv('PRIVY_VERIFICATION_KEY')),
+  privyVerificationKey: process.env.PRIVY_VERIFICATION_KEY ? normalizePem(process.env.PRIVY_VERIFICATION_KEY) : undefined,
 };
