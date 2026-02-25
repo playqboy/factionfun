@@ -17,6 +17,8 @@ import { startRankingJob } from './jobs/updateRankings.js';
 
 async function main() {
   console.log(`[BOOT] NODE_ENV=${config.nodeEnv} PORT=${config.port}`);
+  const vk = config.privyVerificationKey;
+  console.log(`[BOOT] Privy verification key: ${vk.startsWith('-----BEGIN') ? 'PEM format OK' : 'WARNING: not PEM'} (${vk.length} chars)`);
   console.log(`[BOOT] Testing database connection...`);
   await testConnection();
   console.log(`[BOOT] Database OK`);
