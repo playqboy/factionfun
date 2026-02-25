@@ -277,10 +277,6 @@ body {
   animation: marquee 24s linear infinite;
 }
 
-.marquee-track:hover {
-  animation-play-state: paused;
-}
-
 .marquee-content {
   display: flex;
   gap: 1rem;
