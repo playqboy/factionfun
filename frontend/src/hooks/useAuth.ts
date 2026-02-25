@@ -3,6 +3,7 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { useWallets } from "@privy-io/react-auth/solana";
 import { useState, useCallback, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 const hasPrivy = !!process.env.NEXT_PUBLIC_PRIVY_APP_ID;
 
@@ -15,43 +16,65 @@ function useAuthWithPrivy() {
     getAccessToken,
   } = usePrivy();
   const { wallets } = useWallets();
+  const queryClient = useQueryClient();
   const [authToken, setAuthToken] = useState<string | null>(null);
 
   const walletAddress = wallets[0]?.address ?? null;
 
-  // Fetch access token when authenticated, refresh periodically
+  // Fully authenticated = Privy ready + authenticated + wallet connected
+  const isFullyAuthenticated = ready && authenticated && !!walletAddress;
+
+  // Auto-logout if Privy says authenticated but no wallet appears after 3s
   useEffect(() => {
-    if (!authenticated) {
+    if (!ready || !authenticated || walletAddress) return;
+
+    const timeout = setTimeout(() => {
+      privyLogout().catch(() => {});
+      setAuthToken(null);
+      queryClient.clear();
+    }, 3_000);
+
+    return () => clearTimeout(timeout);
+  }, [ready, authenticated, walletAddress, privyLogout, queryClient]);
+
+  // Fetch access token only when fully authenticated
+  useEffect(() => {
+    if (!isFullyAuthenticated) {
       setAuthToken(null);
       return;
     }
 
     getAccessToken().then(setAuthToken).catch(() => setAuthToken(null));
 
-    // Refresh every 50 minutes (tokens expire ~60 min)
     const interval = setInterval(() => {
       getAccessToken().then(setAuthToken).catch(() => setAuthToken(null));
     }, 50 * 60 * 1000);
 
     return () => clearInterval(interval);
-  }, [authenticated, getAccessToken]);
+  }, [isFullyAuthenticated, getAccessToken]);
 
   const authenticate = useCallback(() => {
     login();
   }, [login]);
 
-  const logout = useCallback(() => {
-    privyLogout();
+  const logout = useCallback(async () => {
+    try {
+      await privyLogout();
+    } catch {
+      // Privy logout can fail if already logged out — ignore
+    }
     setAuthToken(null);
-  }, [privyLogout]);
+    queryClient.clear();
+  }, [privyLogout, queryClient]);
 
   return {
     authToken,
-    isAuthenticated: ready && authenticated,
+    isAuthenticated: isFullyAuthenticated,
     isAuthenticating: !ready,
     authenticate,
     logout,
-    walletAddress,
+    // Only expose wallet address when fully authenticated
+    walletAddress: isFullyAuthenticated ? walletAddress : null,
   };
 }
 

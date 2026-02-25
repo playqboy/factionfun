@@ -1,8 +1,11 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || (
-  typeof window !== "undefined" && window.location.hostname !== "localhost"
-    ? (() => { throw new Error("NEXT_PUBLIC_API_URL must be set in production"); })()
-    : "http://localhost:3001/api"
-);
+const API_BASE = (() => {
+  const url = process.env.NEXT_PUBLIC_API_URL;
+  if (url) return url.endsWith("/api") ? url : `${url}/api`;
+  if (typeof window !== "undefined" && window.location.hostname !== "localhost") {
+    throw new Error("NEXT_PUBLIC_API_URL must be set in production");
+  }
+  return "http://localhost:3001/api";
+})();
 
 export interface HolderResponse {
   walletAddress: string;
@@ -43,6 +46,86 @@ export interface TokenInfoResponse {
   decimals: number;
   totalSupply: string;
   holders: number;
+}
+
+export interface WalletHoldingResponse {
+  mint: string;
+  name: string;
+  symbol: string;
+  imageUri: string | null;
+  balance: string;
+  decimals: number;
+  uiAmount: number;
+  isTop10: boolean;
+  rank: number | null;
+  marketCap: number | null;
+}
+
+export interface WalletHoldingsResponse {
+  wallet: string;
+  holdings: WalletHoldingResponse[];
+  totalCount: number;
+}
+
+export async function fetchWalletHoldings(
+  wallet: string
+): Promise<WalletHoldingsResponse> {
+  const res = await fetch(`${API_BASE}/wallet/${wallet}/holdings`);
+  if (!res.ok) throw new Error("Failed to fetch wallet holdings");
+  return res.json();
+}
+
+export interface FavoriteResponse {
+  id: number;
+  walletAddress: string;
+  tokenMint: string;
+  name: string | null;
+  symbol: string | null;
+  imageUri: string | null;
+  createdAt: string;
+}
+
+export async function fetchFavorites(
+  authToken: string
+): Promise<FavoriteResponse[]> {
+  const res = await fetch(`${API_BASE}/favorites`, {
+    headers: { Authorization: `Bearer ${authToken}` },
+  });
+  if (!res.ok) throw new Error("Failed to fetch favorites");
+  return res.json();
+}
+
+export async function addFavorite(
+  tokenMint: string,
+  authToken: string,
+  metadata?: { name?: string; symbol?: string; imageUri?: string }
+): Promise<FavoriteResponse> {
+  const res = await fetch(`${API_BASE}/favorites`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${authToken}`,
+    },
+    body: JSON.stringify({
+      tokenMint,
+      name: metadata?.name,
+      symbol: metadata?.symbol,
+      imageUri: metadata?.imageUri,
+    }),
+  });
+  if (!res.ok) throw new Error("Failed to add favorite");
+  return res.json();
+}
+
+export async function removeFavorite(
+  tokenMint: string,
+  authToken: string
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/favorites/${tokenMint}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${authToken}` },
+  });
+  if (!res.ok) throw new Error("Failed to remove favorite");
 }
 
 export async function fetchTopHolders(
