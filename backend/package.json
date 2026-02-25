@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "node --loader ts-node/esm src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js",
+    "start": "node --dns-result-order=ipv4first dist/index.js",
     "db:migrate": "node --loader ts-node/esm src/db/migrate.ts",
     "db:seed": "node --loader ts-node/esm src/db/seed.ts",
     "lint": "eslint src --ext .ts",
