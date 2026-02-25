@@ -448,6 +448,14 @@ export default function ChatPage() {
                           })
                       : undefined
                   }
+                  tokenName={tokenInfo?.name}
+                  tokenSymbol={tokenInfo?.symbol}
+                  tokenMint={tokenMint ?? undefined}
+                  marketCap={
+                    tokenMint
+                      ? holdingsData?.holdings.find((h) => h.mint === tokenMint)?.marketCap ?? null
+                      : null
+                  }
                 />
               </ErrorBoundary>
             </motion.div>

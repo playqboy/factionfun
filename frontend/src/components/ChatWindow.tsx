@@ -33,6 +33,10 @@ interface ChatWindowProps {
   inputStatus?: "connect" | "not-top10" | "authenticating" | "ready";
   isFavorited?: boolean;
   onToggleFavorite?: () => void;
+  tokenName?: string;
+  tokenSymbol?: string;
+  tokenMint?: string;
+  marketCap?: number | null;
 }
 
 /* ── Memoized single message row ── */
@@ -137,6 +141,10 @@ export default memo(function ChatWindow({
   inputStatus = "ready",
   isFavorited,
   onToggleFavorite,
+  tokenName,
+  tokenSymbol,
+  tokenMint,
+  marketCap,
 }: ChatWindowProps) {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -241,6 +249,7 @@ export default memo(function ChatWindow({
           : "Type a message...";
 
   return (
+    <TooltipProvider>
     <div className="flex flex-col h-full">
       {/* ── Chat header ── */}
       <div className="px-5 py-3 border-b border-border-subtle flex items-center justify-between flex-shrink-0">
@@ -250,34 +259,78 @@ export default memo(function ChatWindow({
           </div>
           <div>
             <span className="text-sm font-semibold text-foreground leading-none block">
-              Faction Chat
+              {tokenName ? `${tokenName} Faction Chat` : "Faction Chat"}
             </span>
             <span className="text-[10px] text-muted-foreground leading-none mt-0.5 block tabular-nums">
               {messages.length} {messages.length === 1 ? "message" : "messages"}
             </span>
           </div>
         </div>
+
+        {/* Right side: token info + favorite */}
         {onToggleFavorite && (
-          <button
-            type="button"
-            onClick={onToggleFavorite}
-            aria-label={isFavorited ? "Remove from favorites" : "Add to favorites"}
-            className="p-1.5 rounded-sm transition-colors cursor-pointer hover:bg-bg-subtle-hover"
-          >
-            <FaStar
-              className={`w-4 h-4 transition-colors ${
-                isFavorited
-                  ? "text-primary"
-                  : "text-muted-foreground/40 hover:text-muted-foreground"
-              }`}
-            />
-          </button>
+          <div className="flex items-center gap-3">
+            {/* Token metadata */}
+            {(tokenSymbol || tokenMint || marketCap) && (
+              <div className="hidden sm:flex items-center gap-2 text-[11px] text-muted-foreground font-mono">
+                {marketCap != null && marketCap > 0 && (
+                  <span className="text-primary/80 font-semibold tabular-nums">
+                    {marketCap >= 1_000_000_000
+                      ? `$${(marketCap / 1_000_000_000).toFixed(1)}B`
+                      : marketCap >= 1_000_000
+                        ? `$${(marketCap / 1_000_000).toFixed(1)}M`
+                        : marketCap >= 1_000
+                          ? `$${(marketCap / 1_000).toFixed(1)}K`
+                          : `$${marketCap.toFixed(0)}`}
+                  </span>
+                )}
+                {tokenSymbol && (
+                  <span className="text-foreground/60">${tokenSymbol}</span>
+                )}
+                {tokenName && tokenSymbol && (
+                  <span className="text-muted-foreground/40 hidden lg:inline">{tokenName}</span>
+                )}
+                {tokenMint && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(tokenMint);
+                        }}
+                        className="text-muted-foreground/40 hover:text-primary transition-colors cursor-pointer inline-flex items-center gap-1"
+                      >
+                        {tokenMint.slice(0, 4)}...{tokenMint.slice(-4)}
+                        <FaCopy className="w-2.5 h-2.5 opacity-40" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>Copy contract address</TooltipContent>
+                  </Tooltip>
+                )}
+              </div>
+            )}
+
+            {/* Favorite star */}
+            <button
+              type="button"
+              onClick={onToggleFavorite}
+              aria-label={isFavorited ? "Remove from favorites" : "Add to favorites"}
+              className="p-1.5 rounded-sm transition-colors cursor-pointer hover:bg-bg-subtle-hover"
+            >
+              <FaStar
+                className={`w-4 h-4 transition-colors ${
+                  isFavorited
+                    ? "text-primary"
+                    : "text-muted-foreground/40 hover:text-muted-foreground"
+                }`}
+              />
+            </button>
+          </div>
         )}
       </div>
 
       {/* ── Messages ── */}
       <ScrollArea className="flex-1 min-h-0" ref={scrollAreaRef}>
-        <TooltipProvider>
         <div className="px-5 py-4 space-y-3">
           {isLoading ? (
             <div className="flex items-center justify-center py-24">
@@ -339,7 +392,6 @@ export default memo(function ChatWindow({
           )}
           <div ref={messagesEndRef} />
         </div>
-        </TooltipProvider>
       </ScrollArea>
 
       {/* ── Input area ── */}
@@ -380,5 +432,6 @@ export default memo(function ChatWindow({
         </form>
       </div>
     </div>
+    </TooltipProvider>
   );
 });

@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useState } from "react";
-import { FaStar, FaBagShopping, FaCrown } from "react-icons/fa6";
+import { FaStar, FaWallet, FaCrown } from "react-icons/fa6";
 import {
   Tooltip,
   TooltipTrigger,
@@ -120,7 +120,7 @@ export default memo(function TokenSubBar({
               : "text-muted-foreground hover:text-foreground/70"
           }`}
         >
-          <FaBagShopping className="w-3.5 h-3.5" />
+          <FaWallet className="w-3.5 h-3.5" />
         </button>
       </div>
 
